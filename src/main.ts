@@ -1,9 +1,8 @@
 import App from './App.svelte';
-import { appWindow } from '@tauri-apps/api/window'
+import { invoke } from '@tauri-apps/api/tauri'
 
 document.body.addEventListener('click', () => {
-// emit an event that are only visible to the current window
-appWindow.emit('event-name', { message: 'Tauri is awesome!' })
+	invoke('open_window');
 })
 
 const app = new App({

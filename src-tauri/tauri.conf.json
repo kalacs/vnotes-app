@@ -7,7 +7,8 @@
     "distDir": "../public",
     "devPath": "http://localhost:8080",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "npm run build",
+    "withGlobalTauri": true
   },
   "tauri": {
     "macOSPrivateApi": true,
@@ -54,14 +55,14 @@
     },
     "windows": [
       {
-        "title": "Video Notes",
+        "title": "Video Notes - Application",
         "label": "main",
         "width": 800,
         "height": 600,
         "resizable": true,
-        "transparent": true,
+        "transparent": false,
         "focus": true,
-        "decorations": false
+        "decorations": true
       }
     ],
     "security": {
