@@ -31,11 +31,9 @@
       "longDescription": "",
       "deb": {
         "depends": [],
-        "useBootstrapper": false
       },
       "macOS": {
         "frameworks": [],
-        "useBootstrapper": false,
         "exceptionDomain": "",
         "signingIdentity": null,
         "providerShortName": null,

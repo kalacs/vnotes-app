@@ -7,6 +7,7 @@ use tauri::{
 #[tauri::command]
 async fn open_window<R: Runtime>(app: AppHandle<R>) {
   let script = r#"
+  console.log("INJECTED")
     window.__count = 0;
     window.__test = setInterval(() => {
       const body = document.querySelector('body');
