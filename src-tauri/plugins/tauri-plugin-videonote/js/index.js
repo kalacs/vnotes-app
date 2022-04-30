@@ -1,10 +1,16 @@
 console.log("INJECT SCRIPT");
 window.__INIT = 0;
+window.__count = 0;
+window.__videoPlayer = null;
 
 if (!window.__INIT) {
   console.log("RUN INIT");
-  window.__count = 0;
-  window.__test = setInterval(() => {
+  initialize();
+  window.__INIT = 1;
+}
+
+function initialize() {
+  window.__findBody = setInterval(() => {
     const body = document.querySelector("body");
 
     if (body || window.__count < 2) {
@@ -20,11 +26,12 @@ if (!window.__INIT) {
       button.style.borderRadius = "45px";
       button.style.border = "1px solid transparent";
       button.style.padding = "22px 0";
+      button.style.zIndex = 10000000;
       button.onclick = function () {
         window.invoke("plugin:videonote|switch_to_main");
       };
       document.querySelector("body").appendChild(button);
-      clearInterval(window.__test);
+      clearInterval(window.__findBody);
     }
     window.__count++;
   }, 1000);
@@ -77,6 +84,7 @@ if (!window.__INIT) {
   };
 
   window.emit = function emit(event, windowLabel, payload) {
+    console.log("EMIT EVENT");
     window.invokeTauriCommand({
       __tauriModule: "Event",
       message: {
@@ -88,5 +96,17 @@ if (!window.__INIT) {
       },
     });
   };
-  window.__INIT = 1;
 }
+
+window.__findVideoPlayer = function findVideoPlayer() {
+  window.__pollingVideo = setInterval(() => {
+    console.log("SEARCH VIDEO");
+    const videoTag = window.document.querySelector("video");
+    if (videoTag) {
+      window.__videoPlayer = videoTag;
+      window.emit("videonotes://video-player-found", "main");
+      clearInterval(window.__pollingVideo);
+      window.__pollingVideo = null;
+    }
+  }, 1000);
+};
