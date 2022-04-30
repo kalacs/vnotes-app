@@ -8,6 +8,12 @@ use tauri::{
     AppHandle, Manager, Runtime,
 };
 
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+    name: String,
+    data: String,
+}
+
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -44,11 +50,26 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
         .setup(|app| {
             let app_copy = app.clone();
+            let app_copy_two = app.clone();
             app.listen_global("videonotes://video-player-found", move |_event| {
                 let main_window = app_copy.get_window("main");
                 main_window
                     .unwrap()
                     .emit("videonotes://video-player-found", "")
+                    .unwrap();
+            });
+            app.listen_global("videonotes://video-player-event", move |event| {
+                let main_window = app_copy_two.get_window("main");
+                println!("got event-name with payload {:?}", event.payload());
+                main_window
+                    .unwrap()
+                    .emit(
+                        "videonotes://video-player-event",
+                        Payload {
+                            name: "Tauri is awesome!".into(),
+                            data: event.payload().unwrap().to_string(),
+                        },
+                    )
                     .unwrap();
             });
             Ok(())

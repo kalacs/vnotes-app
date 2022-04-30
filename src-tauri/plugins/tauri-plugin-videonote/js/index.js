@@ -2,6 +2,8 @@ console.log("INJECT SCRIPT");
 window.__INIT = 0;
 window.__count = 0;
 window.__videoPlayer = null;
+window.__findVideoPlayer = findVideoPlayer;
+window.__initVideoPlayerProxy = initVideoPlayerProxy;
 
 if (!window.__INIT) {
   console.log("RUN INIT");
@@ -97,16 +99,34 @@ function initialize() {
     });
   };
 }
-
-window.__findVideoPlayer = function findVideoPlayer() {
-  window.__pollingVideo = setInterval(() => {
+function findVideoPlayer() {
+  const pollingFunction = () => {
+    if (window.__videoPlayer) {
+      return;
+    }
     console.log("SEARCH VIDEO");
     const videoTag = window.document.querySelector("video");
     if (videoTag) {
       window.__videoPlayer = videoTag;
       window.emit("videonotes://video-player-found", "main");
+      window.initVideoPlayerProxy();
       clearInterval(window.__pollingVideo);
       window.__pollingVideo = null;
     }
-  }, 1000);
-};
+  };
+  pollingFunction();
+  window.__pollingVideo = setInterval(pollingFunction, 1000);
+}
+function initVideoPlayerProxy() {
+  window.__videoPlayer.addEventListener("play", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("playing", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("pause", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("seeked", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("seeking", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("abort", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("ended", forwardVideoEvent);
+}
+function forwardVideoEvent(event) {
+  console.log("VIDEO EVENT: ", event);
+  window.emit(`videonotes://video-player-event`, "main", { type: event.type });
+}
