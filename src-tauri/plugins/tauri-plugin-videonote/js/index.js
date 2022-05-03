@@ -30,6 +30,7 @@ function initialize() {
       button.style.padding = "22px 0";
       button.style.zIndex = 10000000;
       button.onclick = function () {
+        window.__findVideoPlayer();
         window.invoke("plugin:videonote|switch_to_main");
       };
       document.querySelector("body").appendChild(button);

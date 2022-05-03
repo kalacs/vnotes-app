@@ -46,6 +46,33 @@ async fn switch_to_provider<R: Runtime>(app: AppHandle<R>) {
     provider.set_focus().unwrap();
 }
 
+#[tauri::command]
+async fn play_content<R: Runtime>(app: AppHandle<R>) {
+    let provider = app.get_window("video-player").unwrap();
+    provider.eval("window.__videoPlayer.play()").unwrap();
+}
+
+#[tauri::command]
+async fn pause_content<R: Runtime>(app: AppHandle<R>) {
+    let provider = app.get_window("video-player").unwrap();
+    provider.eval("window.__videoPlayer.pause()").unwrap();
+}
+
+#[tauri::command]
+async fn seek_content<R: Runtime>(app: AppHandle<R>, time: u16) {
+    let provider = app.get_window("video-player").unwrap();
+    println!("TIME: {:?}", time);
+    provider
+        .eval(format!("window.__videoPlayer.fastSeek({})", time).as_str())
+        .unwrap();
+}
+
+#[tauri::command]
+async fn connect_player<R: Runtime>(app: AppHandle<R>) {
+    let provider = app.get_window("video-player").unwrap();
+    provider.eval("window.__findVideoPlayer();").unwrap();
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
         .setup(|app| {
@@ -77,7 +104,11 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .invoke_handler(tauri::generate_handler![
             open_window,
             switch_to_main,
-            switch_to_provider
+            switch_to_provider,
+            play_content,
+            pause_content,
+            seek_content,
+            connect_player
         ])
         .build()
 }
