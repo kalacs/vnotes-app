@@ -1,13 +1,13 @@
 <script lang="ts">
+  import PlayButton from "./components/PlayButton.svelte";
   import SwitchButton from "./components/SwitchButton.svelte";
 
   export let name: string;
 </script>
 
 <main>
-  <h1>Hello {name}!</h1>
-  <p>Visit to learn how to build Svelte apps.</p>
   <SwitchButton />
+  <PlayButton />
 </main>
 
 <style>

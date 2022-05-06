@@ -29,6 +29,7 @@ async fn open_window<R: Runtime>(app: AppHandle<R>) {
         tauri::WindowUrl::App("https://hbomax.com".into()),
     )
     .title("Video Notes - Player")
+    .decorations(false)
     .initialization_script(&result)
     .build()
     .unwrap();
