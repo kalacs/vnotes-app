@@ -63,7 +63,7 @@ async fn seek_content<R: Runtime>(app: AppHandle<R>, time: u16) {
     let provider = app.get_window("video-player").unwrap();
     println!("TIME: {:?}", time);
     provider
-        .eval(format!("window.__videoPlayer.fastSeek({})", time).as_str())
+        .eval(format!("window.__videoPlayer.currentTime = {}", time).as_str())
         .unwrap();
 }
 
@@ -87,7 +87,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             });
             app.listen_global("videonotes://video-player-event", move |event| {
                 let main_window = app_copy_two.get_window("main");
-                println!("got event-name with payload {:?}", event.payload());
                 main_window
                     .unwrap()
                     .emit(
