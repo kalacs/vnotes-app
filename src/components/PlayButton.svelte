@@ -3,7 +3,7 @@
   import { WebviewWindow } from "@tauri-apps/api/window";
 
   const webview = new WebviewWindow("main");
-  let buttonId = 0; // 0: open, 1:switch
+  let buttonId = 1; // 0: open, 1:switch
   function handleClick(event) {
     if (buttonId === 0) {
       invoke("plugin:videonote|play_content");

@@ -126,6 +126,7 @@ function initVideoPlayerProxy() {
   window.__videoPlayer.addEventListener("seeking", forwardVideoEvent);
   window.__videoPlayer.addEventListener("abort", forwardVideoEvent);
   window.__videoPlayer.addEventListener("ended", forwardVideoEvent);
+  window.__videoPlayer.addEventListener("timeupdate", forwardVideoEvent);
 }
 function forwardVideoEvent(event) {
   console.log("VIDEO EVENT: ", event);
