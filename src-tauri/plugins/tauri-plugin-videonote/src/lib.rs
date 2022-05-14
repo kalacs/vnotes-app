@@ -1,12 +1,14 @@
 use std::{
     fs::File,
     io::{Error, Read},
+    sync::Mutex,
 };
 use tauri::{
     plugin::{Builder, TauriPlugin},
     window::WindowBuilder,
-    AppHandle, Manager, Runtime,
+    AppHandle, Manager, Runtime, State,
 };
+struct TestState(Mutex<String>);
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -74,11 +76,25 @@ async fn connect_player<R: Runtime>(app: AppHandle<R>) {
     provider.eval("window.__findVideoPlayer();").unwrap();
 }
 
+#[tauri::command]
+fn set_state(state: State<TestState>, value: String) {
+    println!("value: {:?}", value);
+    let mut data = state.0.lock().unwrap();
+    *data = value;
+}
+
+#[tauri::command]
+fn get_state(state: State<TestState>) -> String {
+    let test = &*state.0.lock().unwrap();
+    return test.into();
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
         .setup(|app| {
             let app_copy = app.clone();
             let app_copy_two = app.clone();
+            app.manage(TestState(Mutex::new("".to_string())));
             app.listen_global("videonotes://video-player-found", move |_event| {
                 let main_window = app_copy.get_window("main");
                 main_window
@@ -88,6 +104,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             });
             app.listen_global("videonotes://video-player-event", move |event| {
                 let main_window = app_copy_two.get_window("main");
+                println!("EVENT: {:?}", event);
                 main_window
                     .unwrap()
                     .emit(
@@ -108,7 +125,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             play_content,
             pause_content,
             seek_content,
-            connect_player
+            connect_player,
+            set_state,
+            get_state
         ])
         .build()
 }
