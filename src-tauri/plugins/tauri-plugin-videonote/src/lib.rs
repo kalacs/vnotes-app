@@ -16,6 +16,18 @@ struct Payload {
     data: String,
 }
 
+#[derive(Clone, serde::Deserialize, Debug)]
+struct VideoNote {
+    startTime: f32,
+    endTime: f32,
+    payload: VideoNotePayload,
+}
+
+#[derive(Clone, serde::Deserialize, Debug)]
+struct VideoNotePayload {
+    content: String,
+}
+
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -89,6 +101,18 @@ fn get_state(state: State<TestState>) -> String {
     return test.into();
 }
 
+#[tauri::command]
+async fn load_notes<R: Runtime>(app: AppHandle<R>) -> Result<(), ()> {
+    let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
+    let data = resp.json::<Vec<VideoNote>>().await;
+    println!("{:#?}", data);
+    app.get_window("main")
+        .unwrap()
+        .emit("videonotes://notes-loaded", "")
+        .unwrap();
+    Ok(())
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
         .setup(|app| {
@@ -127,7 +151,8 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             seek_content,
             connect_player,
             set_state,
-            get_state
+            load_notes,
+            get_state,
         ])
         .build()
 }

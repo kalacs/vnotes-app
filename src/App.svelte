@@ -1,6 +1,12 @@
 <script lang="ts">
   import PlayButton from "./components/PlayButton.svelte";
   import SwitchButton from "./components/SwitchButton.svelte";
+  import LoadButton from "./components/LoadButton.svelte";
+  import { WebviewWindow } from "@tauri-apps/api/window";
+  const webview = new WebviewWindow("main");
+  webview.listen("videonotes://notes-loaded", () => {
+    console.log("NOTES LOADED");
+  });
 
   export let name: string;
 </script>
@@ -8,6 +14,7 @@
 <main>
   <SwitchButton />
   <PlayButton />
+  <LoadButton />
 </main>
 
 <style>
