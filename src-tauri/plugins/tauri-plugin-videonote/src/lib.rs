@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
     io::{Error, Read},
@@ -8,26 +9,26 @@ use tauri::{
     window::WindowBuilder,
     AppHandle, Manager, Runtime, State,
 };
-struct TestState(Mutex<String>);
+struct LoadedNotes(Mutex<Vec<VideoNote>>);
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize)]
 struct Payload {
     name: String,
     data: String,
 }
 
-#[derive(Clone, serde::Deserialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNote {
     startTime: f32,
     endTime: f32,
     payload: VideoNotePayload,
 }
 
-#[derive(Clone, serde::Deserialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNotePayload {
     content: String,
+    r#type: String,
 }
-
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -89,23 +90,21 @@ async fn connect_player<R: Runtime>(app: AppHandle<R>) {
 }
 
 #[tauri::command]
-fn set_state(state: State<TestState>, value: String) {
-    println!("value: {:?}", value);
-    let mut data = state.0.lock().unwrap();
-    *data = value;
+fn get_state(state: State<'_, LoadedNotes>) -> Vec<VideoNote> {
+    let data = &*state.0.lock().unwrap();
+    let test = data.clone();
+    test
 }
 
 #[tauri::command]
-fn get_state(state: State<TestState>) -> String {
-    let test = &*state.0.lock().unwrap();
-    return test.into();
-}
-
-#[tauri::command]
-async fn load_notes<R: Runtime>(app: AppHandle<R>) -> Result<(), ()> {
+async fn load_notes<R: Runtime>(
+    app: AppHandle<R>,
+    loadedNotes: State<'_, LoadedNotes>,
+) -> Result<(), ()> {
     let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
     let data = resp.json::<Vec<VideoNote>>().await;
-    println!("{:#?}", data);
+    let mut mutex_data = loadedNotes.0.lock().unwrap();
+    *mutex_data = data.unwrap();
     app.get_window("main")
         .unwrap()
         .emit("videonotes://notes-loaded", "")
@@ -118,7 +117,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
         .setup(|app| {
             let app_copy = app.clone();
             let app_copy_two = app.clone();
-            app.manage(TestState(Mutex::new("".to_string())));
+            app.manage(LoadedNotes(Mutex::new(Vec::<VideoNote>::with_capacity(
+                1000,
+            ))));
             app.listen_global("videonotes://video-player-found", move |_event| {
                 let main_window = app_copy.get_window("main");
                 main_window
@@ -150,7 +151,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             pause_content,
             seek_content,
             connect_player,
-            set_state,
             load_notes,
             get_state,
         ])
