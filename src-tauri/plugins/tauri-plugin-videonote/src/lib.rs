@@ -1,4 +1,6 @@
+use core::num;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::{
     fs::File,
     io::{Error, Read},
@@ -9,12 +11,14 @@ use tauri::{
     window::WindowBuilder,
     AppHandle, Manager, Runtime, State,
 };
-struct LoadedNotes(Mutex<Vec<VideoNote>>);
-
+struct PluginState {
+    current_time: Mutex<f32>,
+    loaded_notes: Mutex<Vec<VideoNote>>,
+}
 #[derive(Clone, Serialize)]
 struct Payload {
     name: String,
-    data: String,
+    payload: VideoEvent,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -29,6 +33,14 @@ struct VideoNotePayload {
     content: String,
     r#type: String,
 }
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct VideoEvent {
+    name: String,
+    currentTime: f32,
+    data: Option<VideoNote>,
+}
+
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -44,6 +56,7 @@ async fn open_window<R: Runtime>(app: AppHandle<R>) {
         tauri::WindowUrl::App("https://hbomax.com".into()),
     )
     .title("Video Notes - Player")
+    .maximized(true)
     .decorations(false)
     .initialization_script(&result)
     .build()
@@ -90,21 +103,14 @@ async fn connect_player<R: Runtime>(app: AppHandle<R>) {
 }
 
 #[tauri::command]
-fn get_state(state: State<'_, LoadedNotes>) -> Vec<VideoNote> {
-    let data = &*state.0.lock().unwrap();
-    let test = data.clone();
-    test
-}
-
-#[tauri::command]
 async fn load_notes<R: Runtime>(
     app: AppHandle<R>,
-    loadedNotes: State<'_, LoadedNotes>,
+    state: State<'_, PluginState>,
 ) -> Result<(), ()> {
     let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
     let data = resp.json::<Vec<VideoNote>>().await;
-    let mut mutex_data = loadedNotes.0.lock().unwrap();
-    *mutex_data = data.unwrap();
+    *state.loaded_notes.lock().unwrap() = data.unwrap();
+    println!("LOADED!");
     app.get_window("main")
         .unwrap()
         .emit("videonotes://notes-loaded", "")
@@ -112,14 +118,34 @@ async fn load_notes<R: Runtime>(
     Ok(())
 }
 
+fn round(number: f32) -> f32 {
+    /*
+      let fraction = (format!("{:.1}", number).parse::<f32>().unwrap().fract() * 10.0).round();
+        let trunk: f32 = number.trunc();
+        println!(
+            "FRACTION: {} --> FORMAT: {}",
+            fraction,
+            format!("{:.1}", number)
+        );
+        let result = match fraction {
+            6.0 | 7.0 | 8.0 | 9.0 => trunk + 1.0,
+            0.0 => trunk,
+            _ => trunk + 0.5,
+        };
+        result
+    */
+    format!("{:.1}", number).parse::<f32>().unwrap()
+}
+
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
         .setup(|app| {
+            app.manage(PluginState {
+                current_time: Mutex::new(0.0),
+                loaded_notes: Mutex::new(Vec::<VideoNote>::with_capacity(1000)),
+            });
+
             let app_copy = app.clone();
-            let app_copy_two = app.clone();
-            app.manage(LoadedNotes(Mutex::new(Vec::<VideoNote>::with_capacity(
-                1000,
-            ))));
             app.listen_global("videonotes://video-player-found", move |_event| {
                 let main_window = app_copy.get_window("main");
                 main_window
@@ -127,19 +153,64 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                     .emit("videonotes://video-player-found", "")
                     .unwrap();
             });
+            let app_copy = app.clone();
             app.listen_global("videonotes://video-player-event", move |event| {
-                let main_window = app_copy_two.get_window("main");
-                println!("EVENT: {:?}", event);
-                main_window
-                    .unwrap()
-                    .emit(
-                        "videonotes://video-player-event",
-                        Payload {
-                            name: "Tauri is awesome!".into(),
-                            data: event.payload().unwrap().to_string(),
-                        },
-                    )
-                    .unwrap();
+                let main_window = app_copy.get_window("main");
+                let video_event: VideoEvent =
+                    serde_json::from_str(&event.payload().unwrap().to_string()).unwrap();
+                let video_event_name = video_event.name.to_string();
+                let state: State<'_, PluginState> = app_copy.state();
+                let video_notes: &Vec<VideoNote> = &*state.loaded_notes.lock().unwrap();
+                let mut new_video_event = video_event.clone();
+                let offset = 0.3;
+
+                if video_event_name == "timeupdate" {
+                    let mut index = 0;
+                    let video_note_result: Option<VideoNote> = loop {
+                        if index + 1 == video_notes.len() {
+                            break None;
+                        }
+                        let video_note: &VideoNote = &video_notes[index];
+                        index = index + 1;
+                        let start_time_rounded: f32 = round(video_note.startTime);
+                        let current_time_rounded: f32 = round(video_event.currentTime);
+                        let lower_bound_rounded: f32 = round(current_time_rounded - offset);
+                        // currentTime - 0.20 <= startTime <= currentTime
+                        if lower_bound_rounded <= start_time_rounded
+                            && start_time_rounded <= current_time_rounded
+                        {
+                            break Some(video_notes[if index > 0 { index - 1 } else { 0 }].clone());
+                        }
+                    };
+
+                    match video_note_result {
+                        Some(video_note) => {
+                            new_video_event.data = Some(video_note);
+                            main_window
+                                .unwrap()
+                                .emit(
+                                    "videonotes://video-player-event",
+                                    Payload {
+                                        name: "cue".to_string(),
+                                        payload: new_video_event,
+                                    },
+                                )
+                                .unwrap();
+                        }
+                        None => (),
+                    }
+                } else {
+                    main_window
+                        .unwrap()
+                        .emit(
+                            "videonotes://video-player-event",
+                            Payload {
+                                name: video_event_name,
+                                payload: video_event,
+                            },
+                        )
+                        .unwrap();
+                }
             });
             Ok(())
         })
@@ -152,7 +223,6 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             seek_content,
             connect_player,
             load_notes,
-            get_state,
         ])
         .build()
 }

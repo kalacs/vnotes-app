@@ -132,8 +132,6 @@ function forwardVideoEvent(event) {
   console.log("VIDEO EVENT: ", event);
   window.emit(`videonotes://video-player-event`, "main", {
     name: event.type,
-    payload: {
-      currentTime: event.target.currentTime,
-    },
+    currentTime: event.target.currentTime,
   });
 }

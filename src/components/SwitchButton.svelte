@@ -5,9 +5,6 @@
   webview.listen("videonotes://video-player-found", () => {
     console.log("VIDEO PLAYER IS READY");
   });
-  webview.listen("videonotes://video-player-event", (event) => {
-    console.log("VIDEO PLAYER event", event);
-  });
   let buttonId = 0; // 0: open, 1:switch
   function handleClick(event) {
     if (buttonId === 0) {
