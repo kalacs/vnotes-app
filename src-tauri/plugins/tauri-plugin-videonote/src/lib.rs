@@ -1,6 +1,4 @@
-use core::num;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::{
     fs::File,
     io::{Error, Read},
@@ -12,19 +10,30 @@ use tauri::{
     AppHandle, Manager, Runtime, State,
 };
 struct PluginState {
-    current_time: Mutex<f32>,
     loaded_notes: Mutex<Vec<VideoNote>>,
+    end_notes: Mutex<Vec<VideoNoteEnd>>,
 }
 #[derive(Clone, Serialize)]
 struct Payload {
     name: String,
     payload: VideoEvent,
 }
+#[derive(Clone, Serialize)]
+struct PayloadForEndEvent {
+    name: String,
+    payload: VideoEventEnd,
+}
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNote {
     startTime: f32,
     endTime: f32,
+    payload: VideoNotePayload,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct VideoNoteEnd {
+    action_time: f32,
     payload: VideoNotePayload,
 }
 
@@ -39,6 +48,13 @@ struct VideoEvent {
     name: String,
     currentTime: f32,
     data: Option<VideoNote>,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct VideoEventEnd {
+    name: String,
+    currentTime: f32,
+    data: Option<VideoNoteEnd>,
 }
 
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
@@ -109,7 +125,17 @@ async fn load_notes<R: Runtime>(
 ) -> Result<(), ()> {
     let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
     let data = resp.json::<Vec<VideoNote>>().await;
-    *state.loaded_notes.lock().unwrap() = data.unwrap();
+    let video_notes = data.unwrap();
+    *state.loaded_notes.lock().unwrap() = video_notes.clone();
+
+    for note in video_notes {
+        let end_note = VideoNoteEnd {
+            action_time: note.endTime,
+            payload: note.payload,
+        };
+        state.end_notes.lock().unwrap().push(end_note);
+    }
+
     println!("LOADED!");
     app.get_window("main")
         .unwrap()
@@ -119,30 +145,15 @@ async fn load_notes<R: Runtime>(
 }
 
 fn round(number: f32) -> f32 {
-    /*
-      let fraction = (format!("{:.1}", number).parse::<f32>().unwrap().fract() * 10.0).round();
-        let trunk: f32 = number.trunc();
-        println!(
-            "FRACTION: {} --> FORMAT: {}",
-            fraction,
-            format!("{:.1}", number)
-        );
-        let result = match fraction {
-            6.0 | 7.0 | 8.0 | 9.0 => trunk + 1.0,
-            0.0 => trunk,
-            _ => trunk + 0.5,
-        };
-        result
-    */
     format!("{:.1}", number).parse::<f32>().unwrap()
 }
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("videonote")
-        .setup(|app| {
+        .setup(|app: &AppHandle<R>| {
             app.manage(PluginState {
-                current_time: Mutex::new(0.0),
                 loaded_notes: Mutex::new(Vec::<VideoNote>::with_capacity(1000)),
+                end_notes: Mutex::new(Vec::<VideoNoteEnd>::with_capacity(1000)),
             });
 
             let app_copy = app.clone();
@@ -161,10 +172,12 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 let video_event_name = video_event.name.to_string();
                 let state: State<'_, PluginState> = app_copy.state();
                 let video_notes: &Vec<VideoNote> = &*state.loaded_notes.lock().unwrap();
+                let end_notes: &Vec<VideoNoteEnd> = &state.end_notes.lock().unwrap();
                 let mut new_video_event = video_event.clone();
                 let offset = 0.3;
 
                 if video_event_name == "timeupdate" {
+                    // find start actions
                     let mut index = 0;
                     let video_note_result: Option<VideoNote> = loop {
                         if index + 1 == video_notes.len() {
@@ -191,8 +204,48 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                                 .emit(
                                     "videonotes://video-player-event",
                                     Payload {
-                                        name: "cue".to_string(),
+                                        name: "startCue".to_string(),
                                         payload: new_video_event,
+                                    },
+                                )
+                                .unwrap();
+                        }
+                        None => (),
+                    }
+                    // find end actions
+                    let mut index = 0;
+                    let main_window_copy = app_copy.get_window("main");
+                    let video_note_result: Option<VideoNoteEnd> = loop {
+                        if index + 1 == end_notes.len() {
+                            break None;
+                        }
+                        let video_note: &VideoNoteEnd = &end_notes[index];
+                        index = index + 1;
+                        let start_time_rounded: f32 = round(video_note.action_time);
+                        let current_time_rounded: f32 = round(video_event.currentTime);
+                        let lower_bound_rounded: f32 = round(current_time_rounded - offset);
+                        // currentTime - 0.20 <= startTime <= currentTime
+                        if lower_bound_rounded <= start_time_rounded
+                            && start_time_rounded <= current_time_rounded
+                        {
+                            break Some(end_notes[if index > 0 { index - 1 } else { 0 }].clone());
+                        }
+                    };
+
+                    match video_note_result {
+                        Some(video_note) => {
+                            let video_event = VideoEventEnd {
+                                name: video_event.name,
+                                currentTime: video_event.currentTime,
+                                data: Some(video_note),
+                            };
+                            main_window_copy
+                                .unwrap()
+                                .emit(
+                                    "videonotes://video-player-event",
+                                    PayloadForEndEvent {
+                                        name: "endCue".to_string(),
+                                        payload: video_event,
                                     },
                                 )
                                 .unwrap();

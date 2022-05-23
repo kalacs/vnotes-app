@@ -25,11 +25,5 @@
 
 <style>
   button {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    border-radius: 45px;
-    border: 1px solid transparent;
-    padding: 22px 0;
   }
 </style>

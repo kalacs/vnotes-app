@@ -10,14 +10,12 @@
     console.log("NOTES LOADED");
   });
   webview.listen("videonotes://video-player-event", ({ payload }: any) => {
-    if (payload.name === "cue") {
+    if (payload.name === "startCue") {
       const data = payload.payload.data;
-      const delay = Math.round((data.endTime - data.startTime) * 1000);
       content = payload.payload.data.payload.content;
-      console.log({ delay, data });
-      setTimeout(() => {
-        content = "";
-      }, delay);
+    }
+    if (payload.name === "endCue") {
+      content = "";
     }
   });
 
