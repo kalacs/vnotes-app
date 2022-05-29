@@ -3,17 +3,18 @@
   export let content;
 </script>
 
-<div>
-  <span>{content}</span>
+<div id="subtitle" class="columns is-centered">
+  <div class="column is-half">
+    <p>{content}</p>
+  </div>
 </div>
 
 <style>
   div {
     position: absolute;
-    bottom: 3em;
-    color: yellow;
+    bottom: -6em;
     font-weight: 700;
-    font-size: 4em;
+    font-size: 2em;
     text-align: center;
     width: 100%;
   }

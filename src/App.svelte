@@ -3,6 +3,7 @@
   import SwitchButton from "./components/SwitchButton.svelte";
   import LoadButton from "./components/LoadButton.svelte";
   import Subtitle from "./components/Subtitle.svelte";
+  import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
   const webview = new WebviewWindow("main");
   let content: string = "SUBTITLE";
@@ -22,12 +23,13 @@
   export let name: string;
 </script>
 
-<main>
+<section id="root" class="section">
+  <LeftPanel />
   <SwitchButton />
   <PlayButton />
   <LoadButton />
   <Subtitle {content} />
-</main>
+</section>
 
 <style>
   main {
