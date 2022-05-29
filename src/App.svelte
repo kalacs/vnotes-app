@@ -7,16 +7,48 @@
   import { WebviewWindow } from "@tauri-apps/api/window";
   const webview = new WebviewWindow("main");
   let content: string = "SUBTITLE";
+  let vocabularyContent: string = "";
+  let pronunciationContent: string = "";
+  let referencesContent: string = "";
+
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
   });
   webview.listen("videonotes://video-player-event", ({ payload }: any) => {
+    console.log(payload);
     if (payload.name === "startCue") {
-      const data = payload.payload.data;
-      content = payload.payload.data.payload.content;
+      if (payload.payload.data.payload.type === "default") {
+        content = payload.payload.data.payload.content;
+      }
+
+      if (payload.payload.data.payload.type === "vocabulary") {
+        vocabularyContent = payload.payload.data.payload.content;
+      }
+
+      if (payload.payload.data.payload.type === "pronunciation") {
+        pronunciationContent = payload.payload.data.payload.content;
+      }
+
+      if (payload.payload.data.payload.type === "references") {
+        referencesContent = payload.payload.data.payload.content;
+      }
     }
     if (payload.name === "endCue") {
-      content = "";
+      if (payload.payload.data.payload.type === "default") {
+        content = "";
+      }
+
+      if (payload.payload.data.payload.type === "vocabulary") {
+        vocabularyContent = "";
+      }
+
+      if (payload.payload.data.payload.type === "pronunciation") {
+        pronunciationContent = "";
+      }
+
+      if (payload.payload.data.payload.type === "references") {
+        referencesContent = "";
+      }
     }
   });
 
@@ -24,11 +56,17 @@
 </script>
 
 <section id="root" class="section">
-  <LeftPanel />
-  <SwitchButton />
-  <PlayButton />
-  <LoadButton />
-  <Subtitle {content} />
+  <section id="left-area" class="section">
+    <LeftPanel {vocabularyContent} {pronunciationContent} {referencesContent} />
+  </section>
+  <section id="down-area" class="section">
+    <SwitchButton />
+    <PlayButton />
+    <LoadButton />
+  </section>
+  <section id="down-area-2" class="section">
+    <Subtitle {content} />
+  </section>
 </section>
 
 <style>
@@ -50,5 +88,9 @@
     main {
       max-width: none;
     }
+  }
+  #down-area {
+    margin-top: 31em;
+    padding: 0;
   }
 </style>

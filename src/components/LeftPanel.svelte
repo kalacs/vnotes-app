@@ -1,6 +1,9 @@
 <script>
   export let isOpened = false;
   export let selectedSection = "";
+  export let vocabularyContent = "There is no content yet";
+  export let pronunciationContent = "There is no content yet";
+  export let referencesContent = "There is no content yet";
 
   const handleClick = (sectionName) => () => {
     if (sectionName === selectedSection) {
@@ -22,17 +25,7 @@
       <div class="message-header">
         <p>Vocabulary</p>
       </div>
-      <div class="message-body">
-        Lorem ipsum dolor sit amet, consectetur adipiscing ebuttont. <strong
-          >Pellentesque risus mi</strong
-        >, tempus quis placerat ut, porta nec nulla. Vestibulum rhoncus ac ex
-        sit amet fringilla. Nullam gravida purus diam, et dictum
-        <a>febuttons venenatis</a>
-        efficitur. Aenean ac <em>eleifend lacus</em>, in molbuttons lectus.
-        Donec sodales, arcu et solbuttoncitudin porttitor, tortor urna tempor
-        buttongula, id porttitor mi magna a neque. Donec dui urna, vehicula et
-        sem eget, facibuttonsis sodales sem.
-      </div>
+      <div class="message-body">{vocabularyContent}</div>
     </article>
     <article
       class="message is-danger tab-content"
@@ -41,17 +34,7 @@
       <div class="message-header">
         <p>Pronunciation</p>
       </div>
-      <div class="message-body">
-        Lorem ipsum dolor sit amet, consectetur adipiscing ebuttont. <strong
-          >Pellentesque risus mi</strong
-        >, tempus quis placerat ut, porta nec nulla. Vestibulum rhoncus ac ex
-        sit amet fringilla. Nullam gravida purus diam, et dictum
-        <a>febuttons venenatis</a>
-        efficitur. Aenean ac <em>eleifend lacus</em>, in molbuttons lectus.
-        Donec sodales, arcu et solbuttoncitudin porttitor, tortor urna tempor
-        buttongula, id porttitor mi magna a neque. Donec dui urna, vehicula et
-        sem eget, facibuttonsis sodales sem.
-      </div>
+      <div class="message-body">{pronunciationContent}</div>
     </article>
     <article
       class="message is-primary tab-content"
@@ -60,17 +43,7 @@
       <div class="message-header">
         <p>References</p>
       </div>
-      <div class="message-body">
-        Lorem ipsum dolor sit amet, consectetur adipiscing ebuttont. <strong
-          >Pellentesque risus mi</strong
-        >, tempus quis placerat ut, porta nec nulla. Vestibulum rhoncus ac ex
-        sit amet fringilla. Nullam gravida purus diam, et dictum
-        <a>febuttons venenatis</a>
-        efficitur. Aenean ac <em>eleifend lacus</em>, in molbuttons lectus.
-        Donec sodales, arcu et solbuttoncitudin porttitor, tortor urna tempor
-        buttongula, id porttitor mi magna a neque. Donec dui urna, vehicula et
-        sem eget, facibuttonsis sodales sem.
-      </div>
+      <div class="message-body">{referencesContent}</div>
     </article>
   </div>
   <div class="column">
@@ -120,6 +93,7 @@
     position: absolute;
     left: -3em;
     transform: translateX(-20%);
+    width: 100%;
   }
   #left-panel.opened {
     transform: translateX(0);

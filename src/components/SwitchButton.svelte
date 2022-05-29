@@ -22,8 +22,3 @@
 >
   <span>{buttonId === 0 ? "Open" : "Back"}</span>
 </button>
-
-<style>
-  button {
-  }
-</style>
