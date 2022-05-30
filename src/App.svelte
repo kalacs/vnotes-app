@@ -1,4 +1,4 @@
-<script lang="ts">
+<script>
   import PlayButton from "./components/PlayButton.svelte";
   import SwitchButton from "./components/SwitchButton.svelte";
   import LoadButton from "./components/LoadButton.svelte";
@@ -6,53 +6,69 @@
   import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
   const webview = new WebviewWindow("main");
-  let content: string = "SUBTITLE";
-  let vocabularyContent: string = "";
-  let pronunciationContent: string = "";
-  let referencesContent: string = "";
+  let subtitleContent = "";
+  let vocabularyContent = "";
+  let pronunciationContent = "";
+  let referencesContent = "";
 
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
   });
-  webview.listen("videonotes://video-player-event", ({ payload }: any) => {
-    console.log(payload);
-    if (payload.name === "startCue") {
-      if (payload.payload.data.payload.type === "default") {
-        content = payload.payload.data.payload.content;
-      }
+  webview.listen("videonotes://start-notes", ({ payload: videoNotes }) => {
+    for (const videoNote of videoNotes) {
+      const {
+        id,
+        payload: { type, content },
+      } = videoNote;
+      switch (type) {
+        case "default":
+          subtitleContent = content;
+          break;
+        case "vocabulary":
+          console.log("START VOCAB PANEL", id);
+          vocabularyContent = content;
+          break;
+        case "pronunciation":
+          pronunciationContent = content;
+          break;
+        case "references":
+          referencesContent = content;
+          break;
 
-      if (payload.payload.data.payload.type === "vocabulary") {
-        vocabularyContent = payload.payload.data.payload.content;
-      }
-
-      if (payload.payload.data.payload.type === "pronunciation") {
-        pronunciationContent = payload.payload.data.payload.content;
-      }
-
-      if (payload.payload.data.payload.type === "references") {
-        referencesContent = payload.payload.data.payload.content;
+        default:
+          break;
       }
     }
-    if (payload.name === "endCue") {
-      if (payload.payload.data.payload.type === "default") {
-        content = "";
-      }
+  });
+  webview.listen("videonotes://end-notes", ({ payload: videoNotes }) => {
+    for (const videoNote of videoNotes) {
+      const {
+        id,
+        payload: { type },
+      } = videoNote;
 
-      if (payload.payload.data.payload.type === "vocabulary") {
-        vocabularyContent = "";
-      }
+      switch (type) {
+        case "default":
+          subtitleContent = "";
+          break;
+        case "vocabulary":
+          console.log("END VOCAB PANEL", id);
+          vocabularyContent = "";
+          break;
+        case "pronunciation":
+          pronunciationContent = "";
+          break;
+        case "references":
+          referencesContent = "";
+          break;
 
-      if (payload.payload.data.payload.type === "pronunciation") {
-        pronunciationContent = "";
-      }
-
-      if (payload.payload.data.payload.type === "references") {
-        referencesContent = "";
+        default:
+          break;
       }
     }
   });
 
-  export let name: string;
+  export let name;
 </script>
 
 <section id="root" class="section">
@@ -65,7 +81,7 @@
     <LoadButton />
   </section>
   <section id="down-area-2" class="section">
-    <Subtitle {content} />
+    <Subtitle content={subtitleContent} />
   </section>
 </section>
 

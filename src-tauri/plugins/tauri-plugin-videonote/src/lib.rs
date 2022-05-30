@@ -26,6 +26,7 @@ struct PayloadForEndEvent {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNote {
+    id: i8,
     startTime: f32,
     endTime: f32,
     payload: VideoNotePayload,
@@ -35,6 +36,7 @@ struct VideoNote {
 struct VideoNoteEnd {
     action_time: f32,
     payload: VideoNotePayload,
+    id: i8,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -132,6 +134,7 @@ async fn load_notes<R: Runtime>(
         let end_note = VideoNoteEnd {
             action_time: note.endTime,
             payload: note.payload,
+            id: note.id,
         };
         state.end_notes.lock().unwrap().push(end_note);
     }
@@ -173,15 +176,15 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 let state: State<'_, PluginState> = app_copy.state();
                 let video_notes: &Vec<VideoNote> = &*state.loaded_notes.lock().unwrap();
                 let end_notes: &Vec<VideoNoteEnd> = &state.end_notes.lock().unwrap();
-                let mut new_video_event = video_event.clone();
                 let offset = 0.3;
 
                 if video_event_name == "timeupdate" {
                     // find start actions
                     let mut index = 0;
-                    let video_note_result: Option<VideoNote> = loop {
+                    let mut video_events: Vec<VideoNote> = Vec::<VideoNote>::with_capacity(5);
+                    loop {
                         if index + 1 == video_notes.len() {
-                            break None;
+                            break;
                         }
                         let video_note: &VideoNote = &video_notes[index];
                         index = index + 1;
@@ -192,32 +195,25 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {
-                            break Some(video_notes[if index > 0 { index - 1 } else { 0 }].clone());
+                            video_events
+                                .push(video_notes[if index > 0 { index - 1 } else { 0 }].clone());
                         }
-                    };
-
-                    match video_note_result {
-                        Some(video_note) => {
-                            new_video_event.data = Some(video_note);
-                            main_window
-                                .unwrap()
-                                .emit(
-                                    "videonotes://video-player-event",
-                                    Payload {
-                                        name: "startCue".to_string(),
-                                        payload: new_video_event,
-                                    },
-                                )
-                                .unwrap();
-                        }
-                        None => (),
                     }
+
+                    if video_events.len() != 0 {
+                        main_window
+                            .unwrap()
+                            .emit("videonotes://start-notes", video_events)
+                            .unwrap();
+                    }
+
                     // find end actions
                     let mut index = 0;
+                    let mut video_events: Vec<VideoNote> = Vec::<VideoNote>::with_capacity(6);
                     let main_window_copy = app_copy.get_window("main");
-                    let video_note_result: Option<VideoNoteEnd> = loop {
+                    loop {
                         if index + 1 == end_notes.len() {
-                            break None;
+                            break;
                         }
                         let video_note: &VideoNoteEnd = &end_notes[index];
                         index = index + 1;
@@ -228,29 +224,15 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {
-                            break Some(end_notes[if index > 0 { index - 1 } else { 0 }].clone());
+                            video_events
+                                .push(video_notes[if index > 0 { index - 1 } else { 0 }].clone());
                         }
-                    };
-
-                    match video_note_result {
-                        Some(video_note) => {
-                            let video_event = VideoEventEnd {
-                                name: video_event.name,
-                                currentTime: video_event.currentTime,
-                                data: Some(video_note),
-                            };
-                            main_window_copy
-                                .unwrap()
-                                .emit(
-                                    "videonotes://video-player-event",
-                                    PayloadForEndEvent {
-                                        name: "endCue".to_string(),
-                                        payload: video_event,
-                                    },
-                                )
-                                .unwrap();
-                        }
-                        None => (),
+                    }
+                    if video_events.len() != 0 {
+                        main_window_copy
+                            .unwrap()
+                            .emit("videonotes://end-notes", video_events)
+                            .unwrap();
                     }
                 } else {
                     main_window

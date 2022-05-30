@@ -25,7 +25,7 @@
       <div class="message-header">
         <p>Vocabulary</p>
       </div>
-      <div class="message-body">{vocabularyContent}</div>
+      <div class="message-body">{@html vocabularyContent}</div>
     </article>
     <article
       class="message is-danger tab-content"
@@ -34,7 +34,7 @@
       <div class="message-header">
         <p>Pronunciation</p>
       </div>
-      <div class="message-body">{pronunciationContent}</div>
+      <div class="message-body">{@html pronunciationContent}</div>
     </article>
     <article
       class="message is-primary tab-content"
@@ -43,7 +43,7 @@
       <div class="message-header">
         <p>References</p>
       </div>
-      <div class="message-body">{referencesContent}</div>
+      <div class="message-body">{@html referencesContent}</div>
     </article>
   </div>
   <div class="column">
@@ -52,7 +52,7 @@
         <button
           data-button-role="vocabulary"
           on:click={handleClick("vocabulary")}
-          class="button is-outlined is-info is-medium"
+          class="button is-info is-medium"
           class:is-hovered={selectedSection === "vocabulary"}
         >
           <span class="icon is-large">
@@ -64,7 +64,7 @@
         <button
           data-button-role="pronunciation"
           on:click={handleClick("pronunciation")}
-          class="button is-outlined is-danger is-medium"
+          class="button is-danger is-medium"
           class:is-hovered={selectedSection === "pronunciation"}
         >
           <span class="icon is-large">
@@ -76,7 +76,7 @@
         <button
           data-button-role="references"
           on:click={handleClick("references")}
-          class="button is-outlined is-primary is-medium"
+          class="button is-primary is-medium"
           class:is-hovered={selectedSection === "references"}
         >
           <span class="icon is-large">
