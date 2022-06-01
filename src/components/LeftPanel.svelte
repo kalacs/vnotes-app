@@ -1,9 +1,9 @@
 <script>
   export let isOpened = false;
   export let selectedSection = "";
-  export let vocabularyContent = "There is no content yet";
-  export let pronunciationContent = "There is no content yet";
-  export let referencesContent = "There is no content yet";
+  export let vocabularyNote = null;
+  export let pronunciationNote = null;
+  export let referencesNote = null;
 
   const handleClick = (sectionName) => () => {
     if (sectionName === selectedSection) {
@@ -25,7 +25,9 @@
       <div class="message-header">
         <p>Vocabulary</p>
       </div>
-      <div class="message-body">{@html vocabularyContent}</div>
+      <div class="message-body">
+        {@html vocabularyNote ? vocabularyNote.payload.content : ""}
+      </div>
     </article>
     <article
       class="message is-danger tab-content"
@@ -34,7 +36,9 @@
       <div class="message-header">
         <p>Pronunciation</p>
       </div>
-      <div class="message-body">{@html pronunciationContent}</div>
+      <div class="message-body">
+        {@html pronunciationNote ? pronunciationNote.payload.content : ""}
+      </div>
     </article>
     <article
       class="message is-primary tab-content"
@@ -43,7 +47,9 @@
       <div class="message-header">
         <p>References</p>
       </div>
-      <div class="message-body">{@html referencesContent}</div>
+      <div class="message-body">
+        {@html referencesNote ? referencesNote.payload.content : ""}
+      </div>
     </article>
   </div>
   <div class="column">
@@ -54,6 +60,7 @@
           on:click={handleClick("vocabulary")}
           class="button is-info is-medium"
           class:is-hovered={selectedSection === "vocabulary"}
+          disabled={vocabularyNote ? false : true}
         >
           <span class="icon is-large">
             <i class="mdi mdi-book-open-variant mdi-24px" />
@@ -66,6 +73,7 @@
           on:click={handleClick("pronunciation")}
           class="button is-danger is-medium"
           class:is-hovered={selectedSection === "pronunciation"}
+          disabled={pronunciationNote ? false : true}
         >
           <span class="icon is-large">
             <i class="mdi mdi-account-voice mdi-24px" />
@@ -78,6 +86,7 @@
           on:click={handleClick("references")}
           class="button is-primary is-medium"
           class:is-hovered={selectedSection === "references"}
+          disabled={referencesNote ? false : true}
         >
           <span class="icon is-large">
             <i class="mdi mdi-lightbulb-on-outline mdi-24px" />

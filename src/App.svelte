@@ -6,10 +6,10 @@
   import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
   const webview = new WebviewWindow("main");
-  let subtitleContent = "";
-  let vocabularyContent = "";
-  let pronunciationContent = "";
-  let referencesContent = "";
+  let subtitleNote = null;
+  let vocabularyNote = null;
+  let pronunciationNote = null;
+  let referencesNote = null;
 
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
@@ -18,21 +18,78 @@
     for (const videoNote of videoNotes) {
       const {
         id,
-        payload: { type, content },
+        payload: { type },
       } = videoNote;
       switch (type) {
         case "default":
-          subtitleContent = content;
+          subtitleNote = videoNote;
+
+          if (vocabularyNote) {
+            for (const { id, phrase } of vocabularyNote.payload.references) {
+              const phraseStartIndex =
+                subtitleNote.payload.content.indexOf(phrase);
+              if (subtitleNote.id === id && phraseStartIndex > -1) {
+                if (!subtitleNote) {
+                  break;
+                }
+                const fragment = subtitleNote.payload.content.substring(
+                  phraseStartIndex,
+                  phraseStartIndex + phrase.length
+                );
+                const replaceString = `<span class="has-text-info">${fragment}</span>`;
+                subtitleNote.payload.content =
+                  subtitleNote.payload.content.replace(phrase, replaceString);
+              }
+            }
+          }
+
+          if (pronunciationNote) {
+            for (const { id, phrase } of pronunciationNote.payload.references) {
+              const phraseStartIndex =
+                subtitleNote.payload.content.indexOf(phrase);
+              if (subtitleNote.id === id && phraseStartIndex > -1) {
+                if (!subtitleNote) {
+                  break;
+                }
+                const fragment = subtitleNote.payload.content.substring(
+                  phraseStartIndex,
+                  phraseStartIndex + phrase.length
+                );
+                const replaceString = `<span class="has-text-danger">${fragment}</span>`;
+                subtitleNote.payload.content =
+                  subtitleNote.payload.content.replace(phrase, replaceString);
+              }
+            }
+          }
+
+          if (referencesNote) {
+            for (const { id, phrase } of referencesNote.payload.references) {
+              const phraseStartIndex =
+                subtitleNote.payload.content.indexOf(phrase);
+              if (subtitleNote.id === id && phraseStartIndex > -1) {
+                if (!subtitleNote) {
+                  break;
+                }
+                const fragment = subtitleNote.payload.content.substring(
+                  phraseStartIndex,
+                  phraseStartIndex + phrase.length
+                );
+                const replaceString = `<span class="has-text-primary">${fragment}</span>`;
+                subtitleNote.payload.content =
+                  subtitleNote.payload.content.replace(phrase, replaceString);
+              }
+            }
+          }
+
           break;
         case "vocabulary":
-          console.log("START VOCAB PANEL", id);
-          vocabularyContent = content;
+          vocabularyNote = videoNote;
           break;
         case "pronunciation":
-          pronunciationContent = content;
+          pronunciationNote = videoNote;
           break;
         case "references":
-          referencesContent = content;
+          referencesNote = videoNote;
           break;
 
         default:
@@ -49,17 +106,16 @@
 
       switch (type) {
         case "default":
-          subtitleContent = "";
+          subtitleNote = null;
           break;
         case "vocabulary":
-          console.log("END VOCAB PANEL", id);
-          vocabularyContent = "";
+          vocabularyNote = null;
           break;
         case "pronunciation":
-          pronunciationContent = "";
+          pronunciationNote = null;
           break;
         case "references":
-          referencesContent = "";
+          referencesNote = null;
           break;
 
         default:
@@ -67,13 +123,11 @@
       }
     }
   });
-
-  export let name;
 </script>
 
 <section id="root" class="section">
   <section id="left-area" class="section">
-    <LeftPanel {vocabularyContent} {pronunciationContent} {referencesContent} />
+    <LeftPanel {vocabularyNote} {pronunciationNote} {referencesNote} />
   </section>
   <section id="down-area" class="section">
     <SwitchButton />
@@ -81,7 +135,7 @@
     <LoadButton />
   </section>
   <section id="down-area-2" class="section">
-    <Subtitle content={subtitleContent} />
+    <Subtitle note={subtitleNote} />
   </section>
 </section>
 

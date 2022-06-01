@@ -40,9 +40,16 @@ struct VideoNoteEnd {
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
+struct VideoNoteReference {
+    id: i8,
+    phrase: String,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNotePayload {
     content: String,
     r#type: String,
+    references: Option<Vec<VideoNoteReference>>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -220,7 +227,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         let start_time_rounded: f32 = round(video_note.action_time);
                         let current_time_rounded: f32 = round(video_event.currentTime);
                         let lower_bound_rounded: f32 = round(current_time_rounded - offset);
-                        // currentTime - 0.20 <= startTime <= currentTime
+                        // currentTime - 0.20 <= startTime <= currentTime....
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {
