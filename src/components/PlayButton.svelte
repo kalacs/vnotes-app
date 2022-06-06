@@ -18,8 +18,15 @@
 <button
   on:click={handleClick}
   id={buttonId === 0 ? "play-button" : "pause-button"}
+  class="button is-rounded"
 >
-  <span>{buttonId === 0 ? "Play" : "Pause"}</span>
+  <span class="icon is-large">
+    <i
+      class="mdi mdi-24px"
+      class:mdi-play={buttonId === 0}
+      class:mdi-pause={buttonId === 1}
+    />
+  </span>
 </button>
 
 <style>

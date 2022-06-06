@@ -125,33 +125,63 @@
   });
 </script>
 
-<section id="root" class="section">
+<div id="main" class="container is-fullhd">
+  <section id="chapter-info">
+    <div class="columns is-centered is-gapless is-multiline">
+      <div class="column is-full">
+        <div class="field has-addons">
+          <p class="control">
+            <button class="button is-rounded">
+              <span class="icon is-large">
+                <i class="mdi mdi-arrow-left mdi-24px" />
+              </span>
+              <span>Left</span>
+            </button>
+          </p>
+          <p class="control">
+            <button class="button">
+              <span class="is-size-5">Chapter I: Name of the clip</span>
+            </button>
+          </p>
+          <p class="control">
+            <button class="button is-rounded">
+              <span>Right</span>
+              <span class="icon is-large">
+                <i class="mdi mdi-arrow-right mdi-24px" />
+              </span>
+            </button>
+          </p>
+        </div>
+      </div>
+      <div class="column is-one-third">
+        <progress class="progress is-success" value="60" max="100">60%</progress
+        >
+      </div>
+    </div>
+  </section>
   <section id="left-area" class="section">
     <LeftPanel {vocabularyNote} {pronunciationNote} {referencesNote} />
   </section>
   <section id="down-area" class="section">
-    <SwitchButton />
-    <PlayButton />
-    <LoadButton />
+    <div class="columns">
+      <div class="column is-one-fifth">
+        <SwitchButton />
+        <PlayButton />
+        <LoadButton />
+      </div>
+    </div>
+    <div class="columns">
+      <div class="column is-full">
+        <Subtitle note={subtitleNote} />
+      </div>
+    </div>
   </section>
-  <section id="down-area-2" class="section">
-    <Subtitle note={subtitleNote} />
-  </section>
-</section>
+</div>
 
 <style>
-  main {
-    text-align: center;
-    padding: 1em;
-    max-width: 240px;
+  #main {
     margin: 0 auto;
-  }
-
-  h1 {
-    color: #ff3e00;
-    text-transform: uppercase;
-    font-size: 4em;
-    font-weight: 100;
+    height: 100%;
   }
 
   @media (min-width: 640px) {
@@ -160,7 +190,17 @@
     }
   }
   #down-area {
-    margin-top: 31em;
-    padding: 0;
+    padding: 1em 288px;
+    position: fixed;
+    bottom: 11em;
+    width: 100%;
+    left: 0px;
+    height: 25%;
+    background-color: black;
+    opacity: 80%;
+  }
+
+  #chapter-info .has-addons {
+    justify-content: center;
   }
 </style>
