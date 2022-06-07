@@ -5,14 +5,28 @@
   import Subtitle from "./components/Subtitle.svelte";
   import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
+  import ChapterInfo from "./components/ChapterInfo.svelte";
   const webview = new WebviewWindow("main");
   let subtitleNote = null;
   let vocabularyNote = null;
   let pronunciationNote = null;
   let referencesNote = null;
+  let currentTime = 0;
+  let chapters = null;
 
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
+  });
+  webview.listen(
+    "videonotes://video-player-event",
+    ({ payload: { name, currentTime: time } }) => {
+      if (name === "timeupdate") {
+        currentTime = time;
+      }
+    }
+  );
+  webview.listen("videonotes://chapters-loaded", ({ payload }) => {
+    chapters = payload;
   });
   webview.listen("videonotes://start-notes", ({ payload: videoNotes }) => {
     for (const videoNote of videoNotes) {
@@ -127,37 +141,7 @@
 
 <div id="main" class="container is-fullhd">
   <section id="chapter-info">
-    <div class="columns is-centered is-gapless is-multiline">
-      <div class="column is-full">
-        <div class="field has-addons">
-          <p class="control">
-            <button class="button is-rounded">
-              <span class="icon is-large">
-                <i class="mdi mdi-arrow-left mdi-24px" />
-              </span>
-              <span>Left</span>
-            </button>
-          </p>
-          <p class="control">
-            <button class="button">
-              <span class="is-size-5">Chapter I: Name of the clip</span>
-            </button>
-          </p>
-          <p class="control">
-            <button class="button is-rounded">
-              <span>Right</span>
-              <span class="icon is-large">
-                <i class="mdi mdi-arrow-right mdi-24px" />
-              </span>
-            </button>
-          </p>
-        </div>
-      </div>
-      <div class="column is-one-third">
-        <progress class="progress is-success" value="60" max="100">60%</progress
-        >
-      </div>
-    </div>
+    <ChapterInfo {currentTime} {chapters} />
   </section>
   <section id="left-area" class="section">
     <LeftPanel {vocabularyNote} {pronunciationNote} {referencesNote} />
@@ -197,10 +181,6 @@
     left: 0px;
     height: 25%;
     background-color: black;
-    opacity: 80%;
-  }
-
-  #chapter-info .has-addons {
-    justify-content: center;
+    opacity: 90%;
   }
 </style>

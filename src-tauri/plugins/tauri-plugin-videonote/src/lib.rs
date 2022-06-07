@@ -12,6 +12,7 @@ use tauri::{
 struct PluginState {
     loaded_notes: Mutex<Vec<VideoNote>>,
     end_notes: Mutex<Vec<VideoNoteEnd>>,
+    chapters: Mutex<Vec<VideoChapter>>,
 }
 #[derive(Clone, Serialize)]
 struct Payload {
@@ -37,6 +38,14 @@ struct VideoNoteEnd {
     action_time: f32,
     payload: VideoNotePayload,
     id: i8,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct VideoChapter {
+    id: i8,
+    title: String,
+    startTime: f32,
+    endTime: f32,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
@@ -135,7 +144,13 @@ async fn load_notes<R: Runtime>(
     let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
     let data = resp.json::<Vec<VideoNote>>().await;
     let video_notes = data.unwrap();
+    let resp = reqwest::get("http://127.0.0.1:3000/chapters")
+        .await
+        .unwrap();
+    let data = resp.json::<Vec<VideoChapter>>().await;
+    let chapters = data.unwrap();
     *state.loaded_notes.lock().unwrap() = video_notes.clone();
+    *state.chapters.lock().unwrap() = chapters.clone();
 
     for note in video_notes {
         let end_note = VideoNoteEnd {
@@ -151,6 +166,10 @@ async fn load_notes<R: Runtime>(
         .unwrap()
         .emit("videonotes://notes-loaded", "")
         .unwrap();
+    app.get_window("main")
+        .unwrap()
+        .emit("videonotes://chapters-loaded", chapters)
+        .unwrap();
     Ok(())
 }
 
@@ -164,6 +183,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             app.manage(PluginState {
                 loaded_notes: Mutex::new(Vec::<VideoNote>::with_capacity(1000)),
                 end_notes: Mutex::new(Vec::<VideoNoteEnd>::with_capacity(1000)),
+                chapters: Mutex::new(Vec::<VideoChapter>::with_capacity(50)),
             });
 
             let app_copy = app.clone();
@@ -214,7 +234,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             .unwrap();
                     }
 
-                    // find end actions
+                    // find end action
                     let mut index = 0;
                     let mut video_events: Vec<VideoNote> = Vec::<VideoNote>::with_capacity(6);
                     let main_window_copy = app_copy.get_window("main");
@@ -241,18 +261,12 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                             .emit("videonotes://end-notes", video_events)
                             .unwrap();
                     }
-                } else {
-                    main_window
-                        .unwrap()
-                        .emit(
-                            "videonotes://video-player-event",
-                            Payload {
-                                name: video_event_name,
-                                payload: video_event,
-                            },
-                        )
-                        .unwrap();
                 }
+                let main_window = app_copy.get_window("main");
+                main_window
+                    .unwrap()
+                    .emit("videonotes://video-player-event", video_event)
+                    .unwrap();
             });
             Ok(())
         })
