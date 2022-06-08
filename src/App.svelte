@@ -13,6 +13,8 @@
   let referencesNote = null;
   let currentTime = 0;
   let chapters = null;
+  let leftPanelIsOpened = false;
+  let leftPanelSelectedSection = "";
 
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
@@ -50,7 +52,7 @@
                   phraseStartIndex,
                   phraseStartIndex + phrase.length
                 );
-                const replaceString = `<span class="has-text-info">${fragment}</span>`;
+                const replaceString = `<span class="has-text-info is-clickable" data-chunk-type="vocabulary">${fragment}</span>`;
                 subtitleNote.payload.content =
                   subtitleNote.payload.content.replace(phrase, replaceString);
               }
@@ -69,7 +71,7 @@
                   phraseStartIndex,
                   phraseStartIndex + phrase.length
                 );
-                const replaceString = `<span class="has-text-danger">${fragment}</span>`;
+                const replaceString = `<span class="has-text-danger is-clickable" data-chunk-type="pronunciation">${fragment}</span>`;
                 subtitleNote.payload.content =
                   subtitleNote.payload.content.replace(phrase, replaceString);
               }
@@ -88,7 +90,7 @@
                   phraseStartIndex,
                   phraseStartIndex + phrase.length
                 );
-                const replaceString = `<span class="has-text-primary">${fragment}</span>`;
+                const replaceString = `<span class="has-text-primary is-clickable" data-chunk-type="references">${fragment}</span>`;
                 subtitleNote.payload.content =
                   subtitleNote.payload.content.replace(phrase, replaceString);
               }
@@ -137,6 +139,18 @@
       }
     }
   });
+
+  function handleSubtitleClick({ target }) {
+    if (target.dataset["chunkType"]) {
+      if (target.dataset["chunkType"] === leftPanelSelectedSection) {
+        leftPanelIsOpened = false;
+        leftPanelSelectedSection = "";
+        return;
+      }
+      leftPanelIsOpened = true;
+      leftPanelSelectedSection = target.dataset["chunkType"];
+    }
+  }
 </script>
 
 <div id="main" class="container is-fullhd">
@@ -144,7 +158,13 @@
     <ChapterInfo {currentTime} {chapters} />
   </section>
   <section id="left-area" class="section">
-    <LeftPanel {vocabularyNote} {pronunciationNote} {referencesNote} />
+    <LeftPanel
+      {vocabularyNote}
+      {pronunciationNote}
+      {referencesNote}
+      isOpened={leftPanelIsOpened}
+      selectedSection={leftPanelSelectedSection}
+    />
   </section>
   <section id="down-area" class="section">
     <div class="columns">
@@ -156,7 +176,7 @@
     </div>
     <div class="columns">
       <div class="column is-full">
-        <Subtitle note={subtitleNote} />
+        <Subtitle note={subtitleNote} on:click={handleSubtitleClick} />
       </div>
     </div>
   </section>
@@ -176,11 +196,14 @@
   #down-area {
     padding: 1em 288px;
     position: fixed;
-    bottom: 11em;
+    bottom: 8em;
     width: 100%;
     left: 0px;
     height: 25%;
     background-color: black;
     opacity: 90%;
+  }
+  #down-area > .columns:first-child {
+    margin-bottom: 0;
   }
 </style>

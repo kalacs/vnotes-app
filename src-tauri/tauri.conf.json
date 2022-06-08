@@ -15,7 +15,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.tauri.dev",
+      "identifier": "com.videoNotes.io",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -30,7 +30,7 @@
       "shortDescription": "",
       "longDescription": "",
       "deb": {
-        "depends": [],
+        "depends": []
       },
       "macOS": {
         "frameworks": [],

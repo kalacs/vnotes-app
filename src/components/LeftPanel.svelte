@@ -103,6 +103,7 @@
     left: -3em;
     transform: translateX(-20%);
     width: 100%;
+    top: 5em;
   }
   #left-panel.opened {
     transform: translateX(0);

@@ -42,6 +42,13 @@
       });
     }
   }
+
+  function formatSecond(seconds) {
+    const remains = Math.round(seconds) % 60;
+    return `${(Math.round(seconds) - remains) / 60}:${
+      remains < 10 ? `0${remains}` : remains
+    }`;
+  }
 </script>
 
 <div class="columns is-centered is-gapless is-multiline">
@@ -57,7 +64,7 @@
         </p>
       {/if}
       <p class="control">
-        <button class="button is-rounded">
+        <button class="button is-rounded" class:is-loading={!chapter}>
           <span class="is-size-5"
             >{chapter
               ? `Chapter ${chapterIndex + 1}. ${chapter.title}`
@@ -76,17 +83,36 @@
       {/if}
     </div>
   </div>
-  <div class="column is-one-third">
-    <progress
-      class="progress is-success"
-      value={chapter ? currentTime - chapter.startTime : 0}
-      max={chapter ? chapter.endTime - chapter.startTime : 100}
-    />
+  <div class="column is-5">
+    <div class="columns">
+      <div class="column">
+        <span
+          class="is-uppercase has-text-white is-size-5-desktop has-text-weight-bold"
+          >{chapter ? formatSecond(chapter.startTime) : ""}</span
+        >
+      </div>
+      <div class="column is-9">
+        <progress
+          class="progress is-success"
+          value={chapter ? currentTime - chapter.startTime : 0}
+          max={chapter ? chapter.endTime - chapter.startTime : 100}
+        />
+      </div>
+      <div class="column">
+        <span
+          class="is-uppercase has-text-white  is-size-5-desktop has-text-weight-bold"
+          >{chapter ? formatSecond(chapter.endTime) : ""}</span
+        >
+      </div>
+    </div>
   </div>
 </div>
 
 <style>
   .has-addons {
     justify-content: center;
+  }
+  progress {
+    display: inline-block;
   }
 </style>
