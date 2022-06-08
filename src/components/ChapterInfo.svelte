@@ -1,4 +1,8 @@
 <script>
+  import { invoke } from "@tauri-apps/api/tauri";
+  import { WebviewWindow } from "@tauri-apps/api/window";
+  const webview = new WebviewWindow("main");
+
   const DEFAULT_VALUE = "Chapter has not been started";
   export let chapters;
   export let currentTime = 0;
@@ -22,6 +26,22 @@
       ? chapters.findIndex(testIfChapterIsCurrent(currentTime))
       : null;
   }
+
+  function seekToPreviousChapter() {
+    if (chapterIndex !== null && chapterIndex > 0) {
+      invoke("plugin:videonote|seek_content", {
+        time: chapters[chapterIndex - 1].startTime - 1,
+      });
+    }
+  }
+
+  function seekToNextChapter() {
+    if (chapterIndex !== null && chapterIndex < chapters.length - 1) {
+      invoke("plugin:videonote|seek_content", {
+        time: chapters[chapterIndex + 1].startTime - 1,
+      });
+    }
+  }
 </script>
 
 <div class="columns is-centered is-gapless is-multiline">
@@ -29,7 +49,7 @@
     <div class="field has-addons">
       {#if previousButtonEnabled}
         <p class="control">
-          <button class="button is-rounded">
+          <button class="button is-rounded" on:click={seekToPreviousChapter}>
             <span class="icon is-large">
               <i class="mdi mdi-arrow-left mdi-24px" />
             </span>
@@ -47,7 +67,7 @@
       </p>
       {#if nextButtonEnabled}
         <p class="control">
-          <button class="button is-rounded">
+          <button class="button is-rounded" on:click={seekToNextChapter}>
             <span class="icon is-large">
               <i class="mdi mdi-arrow-right mdi-24px" />
             </span>

@@ -122,7 +122,7 @@ async fn pause_content<R: Runtime>(app: AppHandle<R>) {
 }
 
 #[tauri::command]
-async fn seek_content<R: Runtime>(app: AppHandle<R>, time: u16) {
+async fn seek_content<R: Runtime>(app: AppHandle<R>, time: f32) {
     let provider = app.get_window("video-player").unwrap();
     println!("TIME: {:?}", time);
     provider
@@ -206,7 +206,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                 let offset = 0.3;
 
                 if video_event_name == "timeupdate" {
-                    // find start actions
+                    // find start action
                     let mut index = 0;
                     let mut video_events: Vec<VideoNote> = Vec::<VideoNote>::with_capacity(5);
                     loop {
