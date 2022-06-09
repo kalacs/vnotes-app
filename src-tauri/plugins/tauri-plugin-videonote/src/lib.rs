@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
-    io::{Error, Read},
+    io::{BufRead, BufReader, Error, Read},
     sync::Mutex,
 };
 use tauri::{
+    api::path::download_dir,
     plugin::{Builder, TauriPlugin},
     window::WindowBuilder,
     AppHandle, Manager, Runtime, State,
@@ -75,6 +76,14 @@ struct VideoEventEnd {
     data: Option<VideoNoteEnd>,
 }
 
+#[derive(Clone, Debug)]
+struct SRTState {
+    id: i32,
+    content: Vec<String>,
+    start: f32,
+    end: f32,
+}
+
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -95,6 +104,63 @@ async fn open_window<R: Runtime>(app: AppHandle<R>) {
     .initialization_script(&result)
     .build()
     .unwrap();
+}
+// 00:01:09,852
+fn parse_time_string_to_float(timeString: &str) -> f32 {
+    let mut tokens: Vec<&str> = timeString.split(&[':', ','][..]).collect();
+    let time_fragment = tokens.pop().unwrap();
+    let ints: Vec<i32> = tokens
+        .iter_mut()
+        .map(|token| token.parse::<i32>().unwrap())
+        .collect();
+    let main = ((ints[0] * 60 * 60) + (ints[1] * 60) + ints[2]) as f32;
+    let rest: f32 = format!("0.{}", time_fragment).parse::<f32>().unwrap();
+    main + rest
+}
+
+#[tauri::command]
+async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) {
+    let absolute_path = format!(
+        "{}/{}",
+        download_dir()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+        fileName
+    );
+
+    let file = File::open(absolute_path).unwrap();
+    let reader = BufReader::new(file);
+    let mut state = SRTState {
+        id: 0,
+        content: vec![],
+        start: 0.0,
+        end: 0.0,
+    };
+
+    for line in reader
+        .lines()
+        .map(|line| line.unwrap())
+        .filter(|one_line| one_line.len() > 0)
+    {
+        if let Ok(id) = line.parse::<i32>() {
+            println!("{:?}", state);
+            state.id = id;
+            state.content = vec![];
+            state.start = 0.0;
+            state.end = 0.0;
+            continue;
+        }
+        if let Some(_) = line.find("-->") {
+            let valami = line.to_string();
+            let times: Vec<&str> = valami.split(" --> ").collect();
+            state.start = parse_time_string_to_float(&times[0]);
+            state.end = parse_time_string_to_float(&times[1]);
+            continue;
+        }
+        state.content.push(line);
+    }
 }
 
 #[tauri::command]
@@ -279,6 +345,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             seek_content,
             connect_player,
             load_notes,
+            import_srt_file,
         ])
         .build()
 }
