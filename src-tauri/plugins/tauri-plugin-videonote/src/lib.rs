@@ -28,30 +28,57 @@ struct PayloadForEndEvent {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNote {
-    id: i8,
-    startTime: f32,
-    endTime: f32,
+    id: i32,
+    start: f32,
+    end: f32,
     payload: VideoNotePayload,
+}
+
+trait TransformVideoNotes {
+    fn to_html(&self) -> String {
+        String::from("")
+    }
+}
+
+impl TransformVideoNotes for Vec<VideoNote> {
+    fn to_html(&self) -> String {
+        let mut video_note_copy = self.clone();
+        video_note_copy
+            .iter_mut()
+            .map(|video_note| {
+                return format!(
+                    "<p data-start=\"{}\" data-end=\"{}\">{}</p>",
+                    video_note.start,
+                    video_note.end,
+                    video_note.payload.content.replace("\n", "<br />")
+                );
+            })
+            .reduce(|mut accum: String, item: String| {
+                accum.push_str(&item.to_string());
+                accum
+            })
+            .unwrap()
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNoteEnd {
     action_time: f32,
     payload: VideoNotePayload,
-    id: i8,
+    id: i32,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoChapter {
-    id: i8,
+    id: i32,
     title: String,
-    startTime: f32,
-    endTime: f32,
+    start: f32,
+    end: f32,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoNoteReference {
-    id: i8,
+    id: i32,
     phrase: String,
 }
 
@@ -74,14 +101,6 @@ struct VideoEventEnd {
     name: String,
     currentTime: f32,
     data: Option<VideoNoteEnd>,
-}
-
-#[derive(Clone, Debug)]
-struct SRTState {
-    id: i32,
-    content: Vec<String>,
-    start: f32,
-    end: f32,
 }
 
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
@@ -118,8 +137,49 @@ fn parse_time_string_to_float(timeString: &str) -> f32 {
     main + rest
 }
 
+fn transform_srt_to_json(reader: BufReader<File>) -> Vec<VideoNote> {
+    let mut video_notes: Vec<VideoNote> = vec![];
+    let mut state = VideoNote {
+        id: 0,
+        payload: VideoNotePayload {
+            r#type: "default".to_string(),
+            content: "".to_string(),
+            references: None,
+        },
+        start: 0.0,
+        end: 0.0,
+    };
+
+    for line in reader
+        .lines()
+        .map(|line| line.unwrap())
+        .filter(|one_line| one_line.len() > 0)
+    {
+        if let Ok(id) = line.parse::<i32>() {
+            video_notes.push(state.clone());
+            state.id = id;
+            state.payload.content = "".to_string();
+            state.start = 0.0;
+            state.end = 0.0;
+            continue;
+        }
+        if let Some(_) = line.find("-->") {
+            let valami = line.to_string();
+            let times: Vec<&str> = valami.split(" --> ").collect();
+            state.start = parse_time_string_to_float(&times[0]);
+            state.end = parse_time_string_to_float(&times[1]);
+            continue;
+        }
+        if state.payload.content != "" {
+            state.payload.content.push_str(&String::from("\n"));
+        }
+        state.payload.content.push_str(&line.to_string());
+    }
+    video_notes
+}
+
 #[tauri::command]
-async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) {
+async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) -> String {
     let absolute_path = format!(
         "{}/{}",
         download_dir()
@@ -132,35 +192,8 @@ async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) {
 
     let file = File::open(absolute_path).unwrap();
     let reader = BufReader::new(file);
-    let mut state = SRTState {
-        id: 0,
-        content: vec![],
-        start: 0.0,
-        end: 0.0,
-    };
-
-    for line in reader
-        .lines()
-        .map(|line| line.unwrap())
-        .filter(|one_line| one_line.len() > 0)
-    {
-        if let Ok(id) = line.parse::<i32>() {
-            println!("{:?}", state);
-            state.id = id;
-            state.content = vec![];
-            state.start = 0.0;
-            state.end = 0.0;
-            continue;
-        }
-        if let Some(_) = line.find("-->") {
-            let valami = line.to_string();
-            let times: Vec<&str> = valami.split(" --> ").collect();
-            state.start = parse_time_string_to_float(&times[0]);
-            state.end = parse_time_string_to_float(&times[1]);
-            continue;
-        }
-        state.content.push(line);
-    }
+    let video_notes: Vec<VideoNote> = transform_srt_to_json(reader);
+    video_notes.to_html()
 }
 
 #[tauri::command]
@@ -220,7 +253,7 @@ async fn load_notes<R: Runtime>(
 
     for note in video_notes {
         let end_note = VideoNoteEnd {
-            action_time: note.endTime,
+            action_time: note.end,
             payload: note.payload,
             id: note.id,
         };
@@ -281,10 +314,10 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         }
                         let video_note: &VideoNote = &video_notes[index];
                         index = index + 1;
-                        let start_time_rounded: f32 = round(video_note.startTime);
+                        let start_time_rounded: f32 = round(video_note.start);
                         let current_time_rounded: f32 = round(video_event.currentTime);
                         let lower_bound_rounded: f32 = round(current_time_rounded - offset);
-                        // currentTime - 0.20 <= startTime <= currentTime
+                        // currentTime - 0.20 <= start <= currentTime
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {
@@ -313,7 +346,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         let start_time_rounded: f32 = round(video_note.action_time);
                         let current_time_rounded: f32 = round(video_event.currentTime);
                         let lower_bound_rounded: f32 = round(current_time_rounded - offset);
-                        // currentTime - 0.20 <= startTime <= currentTime....
+                        // currentTime - 0.20 <= start <= currentTime....
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {

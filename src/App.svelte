@@ -6,6 +6,8 @@
   import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
   import ChapterInfo from "./components/ChapterInfo.svelte";
+  import { onMount } from "svelte";
+  import { invoke } from "@tauri-apps/api/tauri";
   const webview = new WebviewWindow("main");
   let subtitleNote = null;
   let vocabularyNote = null;
@@ -15,6 +17,7 @@
   let chapters = null;
   let leftPanelIsOpened = false;
   let leftPanelSelectedSection = "";
+  let html = "";
 
   webview.listen("videonotes://notes-loaded", () => {
     console.log("NOTES LOADED");
@@ -151,6 +154,16 @@
       leftPanelSelectedSection = target.dataset["chunkType"];
     }
   }
+
+  onMount(() => {
+    invoke("plugin:videonote|import_srt_file", {
+      fileName: "Friends - 1x01.en.srt",
+    })
+      .then((content) => {
+        html = content;
+      })
+      .catch(console.log);
+  });
 </script>
 
 <div id="main" class="container is-fullhd">
@@ -166,6 +179,7 @@
       selectedSection={leftPanelSelectedSection}
     />
   </section>
+  <section class="section">{@html html}</section>
   <section id="down-area" class="section">
     <div class="columns">
       <div class="column is-one-fifth">

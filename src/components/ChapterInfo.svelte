@@ -13,8 +13,7 @@
   $: nextButtonEnabled = chapters && chapterIndex < chapters.length - 1;
 
   function testIfChapterIsCurrent(currentTime) {
-    return ({ startTime, endTime }) =>
-      startTime <= currentTime && currentTime <= endTime;
+    return ({ start, end }) => start <= currentTime && currentTime <= end;
   }
 
   function getChapter(chapters, currentTime) {
@@ -30,7 +29,7 @@
   function seekToPreviousChapter() {
     if (chapterIndex !== null && chapterIndex > 0) {
       invoke("plugin:videonote|seek_content", {
-        time: chapters[chapterIndex - 1].startTime - 1,
+        time: chapters[chapterIndex - 1].start - 1,
       });
     }
   }
@@ -38,7 +37,7 @@
   function seekToNextChapter() {
     if (chapterIndex !== null && chapterIndex < chapters.length - 1) {
       invoke("plugin:videonote|seek_content", {
-        time: chapters[chapterIndex + 1].startTime - 1,
+        time: chapters[chapterIndex + 1].start - 1,
       });
     }
   }
@@ -88,20 +87,20 @@
       <div class="column">
         <span
           class="is-uppercase has-text-white is-size-5-desktop has-text-weight-bold"
-          >{chapter ? formatSecond(chapter.startTime) : ""}</span
+          >{chapter ? formatSecond(chapter.start) : ""}</span
         >
       </div>
       <div class="column is-9">
         <progress
           class="progress is-success"
-          value={chapter ? currentTime - chapter.startTime : 0}
-          max={chapter ? chapter.endTime - chapter.startTime : 100}
+          value={chapter ? currentTime - chapter.start : 0}
+          max={chapter ? chapter.end - chapter.start : 100}
         />
       </div>
       <div class="column">
         <span
           class="is-uppercase has-text-white  is-size-5-desktop has-text-weight-bold"
-          >{chapter ? formatSecond(chapter.endTime) : ""}</span
+          >{chapter ? formatSecond(chapter.end) : ""}</span
         >
       </div>
     </div>
