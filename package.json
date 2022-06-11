@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.0.0-rc.3",
+    "@tiptap/core": "^2.0.0-beta.176",
+    "@tiptap/starter-kit": "^2.0.0-beta.185",
     "sirv-cli": "^2.0.0"
   }
 }

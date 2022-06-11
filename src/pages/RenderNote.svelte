@@ -1,13 +1,14 @@
 <script>
-  import PlayButton from "./components/PlayButton.svelte";
-  import SwitchButton from "./components/SwitchButton.svelte";
-  import LoadButton from "./components/LoadButton.svelte";
-  import Subtitle from "./components/Subtitle.svelte";
-  import LeftPanel from "./components/LeftPanel.svelte";
   import { WebviewWindow } from "@tauri-apps/api/window";
-  import ChapterInfo from "./components/ChapterInfo.svelte";
   import { onMount } from "svelte";
   import { invoke } from "@tauri-apps/api/tauri";
+  import PlayButton from "../components/PlayButton.svelte";
+  import SwitchButton from "../components/SwitchButton.svelte";
+  import LoadButton from "../components/LoadButton.svelte";
+  import Subtitle from "../components/Subtitle.svelte";
+  import LeftPanel from "../components/LeftPanel.svelte";
+  import ChapterInfo from "../components/ChapterInfo.svelte";
+
   const webview = new WebviewWindow("main");
   let subtitleNote = null;
   let vocabularyNote = null;
@@ -167,7 +168,7 @@
 </script>
 
 <div id="main" class="container is-fullhd">
-  <section id="chapter-info">
+  <section id="chapter-info" class="section">
     <ChapterInfo {currentTime} {chapters} />
   </section>
   <section id="left-area" class="section">

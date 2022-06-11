@@ -47,7 +47,7 @@ impl TransformVideoNotes for Vec<VideoNote> {
             .iter_mut()
             .map(|video_note| {
                 return format!(
-                    "<p data-start=\"{}\" data-end=\"{}\">{}</p>",
+                    "<video-note type=\"default\" start=\"{}\" end=\"{}\">{}</video-note>",
                     video_note.start,
                     video_note.end,
                     video_note.payload.content.replace("\n", "<br />")

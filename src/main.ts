@@ -1,6 +1,6 @@
-import App from './App.svelte';
+import FrontController from './FrontController.svelte';
 
-const app = new App({
+const app = new FrontController({
 	target: document.querySelector('body'),
 });
 
