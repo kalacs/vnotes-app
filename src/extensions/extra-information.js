@@ -4,7 +4,6 @@ export default Node.create({
   name: "extraInformation",
   group: "block",
   content: "inline*",
-  atom: true,
 
   addAttributes() {
     return {
@@ -22,7 +21,6 @@ export default Node.create({
       },
     };
   },
-
   parseHTML() {
     return [
       {

@@ -3,7 +3,6 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
-  import { HandleVideoNotes } from "../../../extensions/handle-videonotes";
   import ExtraInformation from "../../../extensions/extra-information";
   import VideoNote from "../../../extensions/video-note";
   let element;
@@ -23,7 +22,7 @@
     editor = new Editor({
       element: element,
       extensions: [ExtraInformation, StarterKit, VideoNote],
-      content: "<p>Hello World! 🌍️ </p>",
+      content: "",
       onTransaction: () => {
         // force re-render so `editor.isActive` works as expected
         editor = editor;
@@ -54,7 +53,7 @@
                   '<extra-information start="00:04.23" end="00:18.234234" type="references">Content</extra-information>'
                 )
                 .run()}
-            class:active={editor.isActive("extra-information", {
+            class:is-hovered={editor.isActive("extraInformation", {
               type: "references",
             })}>Add references</button
           >
@@ -70,8 +69,9 @@
                   '<extra-information start="00:04.23" end="00:18.234234" type="vocabulary">Content</extra-information>'
                 )
                 .run()}
-            class:active={editor.isActive("heading", { level: 2 })}
-            >Add vocabulary</button
+            class:is-hovered={editor.isActive("extraInformation", {
+              type: "vocabulary",
+            })}>Add vocabulary</button
           >
         </p>
         <p class="control">
@@ -85,8 +85,9 @@
                   '<extra-information start="00:04.23" end="00:18.234234" type="pronunciation">Content</extra-information>'
                 )
                 .run()}
-            class:active={editor.isActive("heading", { level: 2 })}
-            >Add pronunciation</button
+            class:is-hovered={editor.isActive("extraInformation", {
+              type: "pronunciation",
+            })}>Add pronunciation</button
           >
         </p>
         <p class="control">
@@ -100,7 +101,8 @@
                   '<video-note start="00:04.23" end="00:18.234234">Content</video-note>'
                 )
                 .run()}
-            class:active={editor.isActive("paragraph")}>Add VideoNote</button
+            class:is-hovered={editor.isActive("videoNote")}
+            >Add VideoNote</button
           >
         </p>{/if}
     </div>
