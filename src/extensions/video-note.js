@@ -1,4 +1,9 @@
 import { mergeAttributes, Node } from "@tiptap/core";
+const capitalize = (s) => {
+  if (typeof s !== "string") return "";
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
 function formatSeconds(totalSeconds) {
   const [mainPart, fragmentPart] = (totalSeconds + "").split(".");
   const minutes = Math.floor(mainPart / 60);
@@ -47,8 +52,6 @@ export default Node.create({
   },
   addNodeView() {
     return ({ editor, node, getPos }) => {
-      const { view } = editor;
-      console.log("NOTE", node);
       const dom = document.createElement("div");
 
       dom.classList.add("video-note");
@@ -77,7 +80,45 @@ export default Node.create({
       startSpan.innerText = formatSeconds(node.attrs.start);
       endSpan.innerText = formatSeconds(node.attrs.end);
       columnContainer.append(startSpan, iconSpan, endSpan);
-      dom.append(columnContainer, content);
+      console.log(
+        ["pronunciation", "references", "vocabulary"].indexOf(node.attrs.type) >
+          -1
+      );
+      if (
+        ["pronunciation", "references", "vocabulary"].indexOf(node.attrs.type) >
+        -1
+      ) {
+        const header = document.createElement("div");
+        const headerContent = document.createElement("p");
+        const body = document.createElement("div");
+
+        dom.classList.add("message");
+        dom.style.padding = 0;
+
+        switch (node.attrs.type) {
+          case "vocabulary":
+            dom.classList.add("is-info");
+            break;
+          case "references":
+            dom.classList.add("is-primary");
+            break;
+          case "pronunciation":
+            dom.classList.add("is-danger");
+            break;
+
+          default:
+            break;
+        }
+        headerContent.innerHTML = capitalize(node.attrs.type);
+        header.classList.add("message-header");
+        header.appendChild(headerContent);
+
+        body.classList.add("message-body");
+        body.append(columnContainer, content);
+        dom.append(header, body);
+      } else {
+        dom.append(columnContainer, content);
+      }
 
       return {
         dom,

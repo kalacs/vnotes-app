@@ -1,7 +1,5 @@
 <script>
   import { WebviewWindow } from "@tauri-apps/api/window";
-  import { onMount } from "svelte";
-  import { invoke } from "@tauri-apps/api/tauri";
   import PlayButton from "../components/PlayButton.svelte";
   import SwitchButton from "../components/SwitchButton.svelte";
   import LoadButton from "../components/LoadButton.svelte";
@@ -155,16 +153,6 @@
       leftPanelSelectedSection = target.dataset["chunkType"];
     }
   }
-
-  onMount(() => {
-    invoke("plugin:videonote|import_srt_file", {
-      fileName: "Friends - 1x01.en.srt",
-    })
-      .then((content) => {
-        html = content;
-      })
-      .catch(console.log);
-  });
 </script>
 
 <div id="main" class="container is-fullhd">

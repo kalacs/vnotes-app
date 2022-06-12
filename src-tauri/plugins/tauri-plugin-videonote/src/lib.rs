@@ -47,7 +47,8 @@ impl TransformVideoNotes for Vec<VideoNote> {
             .iter_mut()
             .map(|video_note| {
                 return format!(
-                    "<video-note type=\"default\" start=\"{}\" end=\"{}\">{}</video-note>",
+                    "<video-note type=\"{}\" start=\"{}\" end=\"{}\">{}</video-note>",
+                    video_note.payload.r#type,
                     video_note.start,
                     video_note.end,
                     video_note.payload.content.replace("\n", "<br />")
@@ -124,7 +125,7 @@ async fn open_window<R: Runtime>(app: AppHandle<R>) {
     .build()
     .unwrap();
 }
-// 00:01:09,852
+
 fn parse_time_string_to_float(timeString: &str) -> f32 {
     let mut tokens: Vec<&str> = timeString.split(&[':', ','][..]).collect();
     let time_fragment = tokens.pop().unwrap();
@@ -179,7 +180,7 @@ fn transform_srt_to_json(reader: BufReader<File>) -> Vec<VideoNote> {
 }
 
 #[tauri::command]
-async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) -> String {
+async fn import_srt_file<R: Runtime>(_app: AppHandle<R>, fileName: String) -> String {
     let absolute_path = format!(
         "{}/{}",
         download_dir()
@@ -193,6 +194,12 @@ async fn import_srt_file<R: Runtime>(app: AppHandle<R>, fileName: String) -> Str
     let file = File::open(absolute_path).unwrap();
     let reader = BufReader::new(file);
     let video_notes: Vec<VideoNote> = transform_srt_to_json(reader);
+    video_notes.to_html()
+}
+
+#[tauri::command]
+fn open_video_notes<R: Runtime>(_app: AppHandle<R>, state: State<'_, PluginState>) -> String {
+    let video_notes: &Vec<VideoNote> = &*state.loaded_notes.lock().unwrap();
     video_notes.to_html()
 }
 
@@ -379,6 +386,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             connect_player,
             load_notes,
             import_srt_file,
+            open_video_notes,
         ])
         .build()
 }

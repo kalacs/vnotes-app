@@ -18,6 +18,19 @@
       .catch(console.log);
   }
 
+  function loadVideoNote() {
+    invoke("plugin:videonote|load_notes")
+      .then(() =>
+        invoke("plugin:videonote|open_video_notes", {
+          fileName: "Friends - 1x01.en.srt",
+        })
+      )
+      .then((content) => {
+        editor.commands.setContent(content);
+      })
+      .catch(console.log);
+  }
+
   onMount(() => {
     editor = new Editor({
       element: element,
@@ -40,6 +53,7 @@
 <div class="columns is-multiline">
   <div class="column is-full">
     <button class="button" on:click={importSRTFile}>Import .srt</button>
+    <button class="button" on:click={loadVideoNote}>Open VideoNote</button>
     <div class="field has-addons">
       {#if editor}
         <p class="control">
