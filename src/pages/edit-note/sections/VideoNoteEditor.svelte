@@ -82,7 +82,7 @@
                 .chain()
                 .insertContentAt(
                   0,
-                  '<extra-information start="00:04.23" end="00:18.234234" type="pronunciation">Content</extra-information>'
+                  '<extra-information start="4.23" end="18.234234" type="pronunciation">Content</extra-information>'
                 )
                 .run()}
             class:is-hovered={editor.isActive("extraInformation", {
@@ -92,7 +92,7 @@
         </p>
         <p class="control">
           <button
-            class="button is-outlined"
+            class="button is-dark is-outlined"
             on:click={() =>
               editor
                 .chain()
