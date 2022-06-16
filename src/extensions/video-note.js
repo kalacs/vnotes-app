@@ -1,4 +1,5 @@
 import { mergeAttributes, Node } from "@tiptap/core";
+
 const capitalize = (s) => {
   if (typeof s !== "string") return "";
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -17,6 +18,31 @@ export default Node.create({
   name: "videoNote",
   group: "block",
   content: "inline*",
+  onUpdate({ editor }) {
+    document.querySelectorAll("[data-has-reference] p").forEach((element) => {
+      for (const phrase in this.storage.pointers) {
+        const type = this.storage.pointers[phrase];
+        const phraseStartIndex = element.innerHTML.indexOf(phrase);
+        if (phraseStartIndex > -1) {
+          const phraseEndIndex = phraseStartIndex + phrase.length;
+          const phraseFound = element.innerHTML.substring(
+            phraseStartIndex,
+            phraseEndIndex
+          );
+          const replaceString = `<span class="has-text-${type} has-text-weight-bold is-clickable" data-chunk-type="vocabulary">${phraseFound}</span>`;
+          element.innerHTML = element.innerHTML.replace(phrase, replaceString);
+        }
+      }
+    });
+  },
+
+  addStorage() {
+    return {
+      sections: new Map(),
+      pointers: {},
+      hasReference: new Set(),
+    };
+  },
   addKeyboardShortcuts() {
     return {
       // ↓ your new keyboard shortcut
@@ -34,12 +60,15 @@ export default Node.create({
       end: {
         default: null,
       },
-      ["video-note-id"]: {
+      id: {
         default: 0,
+      },
+      references: {
+        default: null,
       },
     };
   },
-  parseHTML() {
+  parseHTML: () => {
     return [
       {
         tag: "video-note",
@@ -47,12 +76,42 @@ export default Node.create({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML: ({ HTMLAttributes }) => {
     return ["video-note", mergeAttributes(HTMLAttributes), 0];
   },
   addNodeView() {
-    return ({ editor, node, getPos }) => {
+    return (tools) => {
       const dom = document.createElement("div");
+      const { editor, node, getPos } = tools;
+      if (node.attrs.references) {
+        const references = node.attrs.references
+          .split(";")
+          .reduce((map, reference) => {
+            const [rawId, phrase] = reference.split("::");
+            const id = parseInt(rawId);
+            if (id) {
+              this.storage.hasReference.add(id);
+              this.storage.pointers[phrase] =
+                node.attrs.type === "vocabulary"
+                  ? "info"
+                  : node.attrs.type === "references"
+                  ? "primary"
+                  : "danger";
+              map.push({
+                id,
+                phrase,
+                type: node.attrs.type,
+                parentId: node.attrs.id,
+              });
+            }
+            return map;
+          }, []);
+        this.storage.sections.set(node.attrs.id, references);
+      }
+
+      if (this.storage.hasReference.has(node.attrs.id)) {
+        dom.dataset.hasReference = true;
+      }
 
       dom.classList.add("video-note");
       dom.classList.add("box");
@@ -80,10 +139,7 @@ export default Node.create({
       startSpan.innerText = formatSeconds(node.attrs.start);
       endSpan.innerText = formatSeconds(node.attrs.end);
       columnContainer.append(startSpan, iconSpan, endSpan);
-      console.log(
-        ["pronunciation", "references", "vocabulary"].indexOf(node.attrs.type) >
-          -1
-      );
+
       if (
         ["pronunciation", "references", "vocabulary"].indexOf(node.attrs.type) >
         -1

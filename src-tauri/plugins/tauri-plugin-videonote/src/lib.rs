@@ -46,12 +46,21 @@ impl TransformVideoNotes for Vec<VideoNote> {
         video_note_copy
             .iter_mut()
             .map(|video_note| {
+                let content = video_note.payload.content.replace("\n", "<br />");
+                let mut references: Vec<VideoNoteReference>;
+                let mut references_content: String = String::from("");
+
+                if let Some(references) = &video_note.payload.references {
+                  references_content = references.iter().map(|reference:&VideoNoteReference| format!("{}::{};", reference.id, reference.phrase)).reduce(|mut accum: String, item: String| {
+                    accum.push_str(&item.to_string());
+                    accum
+                })
+                .unwrap()
+                }
+
                 return format!(
-                    "<video-note type=\"{}\" start=\"{}\" end=\"{}\">{}</video-note>",
-                    video_note.payload.r#type,
-                    video_note.start,
-                    video_note.end,
-                    video_note.payload.content.replace("\n", "<br />")
+                    "<video-note type=\"{}\" start=\"{}\" end=\"{}\" references=\"{}\" id={}>{}</video-note>",
+                    video_note.payload.r#type, video_note.start, video_note.end, references_content, video_note.id,content
                 );
             })
             .reduce(|mut accum: String, item: String| {

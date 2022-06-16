@@ -3,7 +3,7 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
-  import ExtraInformation from "../../../extensions/extra-information";
+  import Span from "../../../extensions/span";
   import VideoNote from "../../../extensions/video-note";
   let element;
   let editor;
@@ -13,7 +13,7 @@
       fileName: "Friends - 1x01.en.srt",
     })
       .then((content) => {
-        editor.commands.setContent(content);
+        editor.commands.setContent(content, true);
       })
       .catch(console.log);
   }
@@ -26,7 +26,7 @@
         })
       )
       .then((content) => {
-        editor.commands.setContent(content);
+        editor.commands.setContent(content, true);
       })
       .catch(console.log);
   }
@@ -34,7 +34,7 @@
   onMount(() => {
     editor = new Editor({
       element: element,
-      extensions: [ExtraInformation, StarterKit, VideoNote],
+      extensions: [Span, StarterKit, VideoNote],
       content: "",
       onTransaction: () => {
         // force re-render so `editor.isActive` works as expected
