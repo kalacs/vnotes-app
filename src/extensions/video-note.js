@@ -18,6 +18,7 @@ export default Node.create({
   name: "videoNote",
   group: "block",
   content: "inline*",
+  //  marks: "kalacs",
   onUpdate({ editor }) {
     document.querySelectorAll("[data-has-reference] p").forEach((element) => {
       for (const phrase in this.storage.pointers) {
@@ -29,7 +30,7 @@ export default Node.create({
             phraseStartIndex,
             phraseEndIndex
           );
-          const replaceString = `<span class="has-text-${type} has-text-weight-bold is-clickable" data-chunk-type="vocabulary">${phraseFound}</span>`;
+          const replaceString = `<video-note-reference type="${type}">${phraseFound}</video-note-reference>`;
           element.innerHTML = element.innerHTML.replace(phrase, replaceString);
         }
       }
@@ -47,6 +48,15 @@ export default Node.create({
     return {
       // ↓ your new keyboard shortcut
       Enter: () => this.editor.commands.insertContent("<br />"),
+      "Shift-Cmd-v": () => {
+        this.editor.commands.setMark("kalacs", { type: "vocabulary" });
+      },
+      "Shift-Cmd-r": () => {
+        this.editor.commands.setMark("kalacs", { type: "references" });
+      },
+      "Shift-Cmd-p": () => {
+        this.editor.commands.setMark("kalacs", { type: "pronunciation" });
+      },
     };
   },
   addAttributes() {
@@ -91,12 +101,7 @@ export default Node.create({
             const id = parseInt(rawId);
             if (id) {
               this.storage.hasReference.add(id);
-              this.storage.pointers[phrase] =
-                node.attrs.type === "vocabulary"
-                  ? "info"
-                  : node.attrs.type === "references"
-                  ? "primary"
-                  : "danger";
+              this.storage.pointers[phrase] = node.attrs.type;
               map.push({
                 id,
                 phrase,

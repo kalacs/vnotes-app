@@ -47,7 +47,6 @@ impl TransformVideoNotes for Vec<VideoNote> {
             .iter_mut()
             .map(|video_note| {
                 let content = video_note.payload.content.replace("\n", "<br />");
-                let mut references: Vec<VideoNoteReference>;
                 let mut references_content: String = String::from("");
 
                 if let Some(references) = &video_note.payload.references {
@@ -102,14 +101,14 @@ struct VideoNotePayload {
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoEvent {
     name: String,
-    currentTime: f32,
+    time: f32,
     data: Option<VideoNote>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct VideoEventEnd {
     name: String,
-    currentTime: f32,
+    time: f32,
     data: Option<VideoNoteEnd>,
 }
 
@@ -135,8 +134,8 @@ async fn open_window<R: Runtime>(app: AppHandle<R>) {
     .unwrap();
 }
 
-fn parse_time_string_to_float(timeString: &str) -> f32 {
-    let mut tokens: Vec<&str> = timeString.split(&[':', ','][..]).collect();
+fn parse_time_string_to_float(time_string: &str) -> f32 {
+    let mut tokens: Vec<&str> = time_string.split(&[':', ','][..]).collect();
     let time_fragment = tokens.pop().unwrap();
     let ints: Vec<i32> = tokens
         .iter_mut()
@@ -189,7 +188,7 @@ fn transform_srt_to_json(reader: BufReader<File>) -> Vec<VideoNote> {
 }
 
 #[tauri::command]
-async fn import_srt_file<R: Runtime>(_app: AppHandle<R>, fileName: String) -> String {
+async fn import_srt_file<R: Runtime>(_app: AppHandle<R>, file_name: String) -> String {
     let absolute_path = format!(
         "{}/{}",
         download_dir()
@@ -197,7 +196,7 @@ async fn import_srt_file<R: Runtime>(_app: AppHandle<R>, fileName: String) -> St
             .into_os_string()
             .into_string()
             .unwrap(),
-        fileName
+        file_name
     );
 
     let file = File::open(absolute_path).unwrap();
@@ -241,7 +240,7 @@ async fn seek_content<R: Runtime>(app: AppHandle<R>, time: f32) {
     let provider = app.get_window("video-player").unwrap();
     println!("TIME: {:?}", time);
     provider
-        .eval(format!("window.__videoPlayer.currentTime = {}", time).as_str())
+        .eval(format!("window.__videoPlayer.time = {}", time).as_str())
         .unwrap();
 }
 
@@ -331,9 +330,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         let video_note: &VideoNote = &video_notes[index];
                         index = index + 1;
                         let start_time_rounded: f32 = round(video_note.start);
-                        let current_time_rounded: f32 = round(video_event.currentTime);
+                        let current_time_rounded: f32 = round(video_event.time);
                         let lower_bound_rounded: f32 = round(current_time_rounded - offset);
-                        // currentTime - 0.20 <= start <= currentTime
+                        // time - 0.20 <= start <= time
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {
@@ -360,9 +359,9 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
                         let video_note: &VideoNoteEnd = &end_notes[index];
                         index = index + 1;
                         let start_time_rounded: f32 = round(video_note.action_time);
-                        let current_time_rounded: f32 = round(video_event.currentTime);
+                        let current_time_rounded: f32 = round(video_event.time);
                         let lower_bound_rounded: f32 = round(current_time_rounded - offset);
-                        // currentTime - 0.20 <= start <= currentTime....
+                        // time - 0.20 <= start <= time....
                         if lower_bound_rounded <= start_time_rounded
                             && start_time_rounded <= current_time_rounded
                         {

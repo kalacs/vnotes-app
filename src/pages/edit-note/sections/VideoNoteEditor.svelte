@@ -5,6 +5,9 @@
   import StarterKit from "@tiptap/starter-kit";
   import Span from "../../../extensions/span";
   import VideoNote from "../../../extensions/video-note";
+  import VideoNoteReference from "../../../extensions/video-note-reference";
+  import { WindowManager } from "@tauri-apps/api/window";
+
   let element;
   let editor;
 
@@ -34,7 +37,7 @@
   onMount(() => {
     editor = new Editor({
       element: element,
-      extensions: [Span, StarterKit, VideoNote],
+      extensions: [VideoNoteReference, Span, StarterKit, VideoNote],
       content: "",
       onTransaction: () => {
         // force re-render so `editor.isActive` works as expected
@@ -96,7 +99,7 @@
                 .chain()
                 .insertContentAt(
                   0,
-                  '<extra-information start="4.23" end="18.234234" type="pronunciation">Content</extra-information>'
+                  "<video-note><video-note-reference>Content</video-note-reference></video-note>"
                 )
                 .run()}
             class:is-hovered={editor.isActive("extraInformation", {
