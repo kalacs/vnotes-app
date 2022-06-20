@@ -1,23 +1,9 @@
 import { mergeAttributes, Node, Mark } from "@tiptap/core";
 import { Plugin, PluginKey } from "prosemirror-state";
 export default Mark.create({
-  name: "kalacs",
+  name: "videoNoteReference",
   priority: 1000,
   selectable: true,
-  addProseMirrorPlugins() {
-    const editor = this.editor;
-    return [
-      new Plugin({
-        key: new PluginKey("eventHandler"),
-        props: {
-          handleClick(view, pos, event) {
-            console.log({ view, pos, event });
-            editor.commands.setNodeSelection(pos);
-          },
-        },
-      }),
-    ];
-  },
   addAttributes() {
     return {
       type: {

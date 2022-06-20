@@ -18,24 +18,7 @@ export default Node.create({
   name: "videoNote",
   group: "block",
   content: "inline*",
-  //  marks: "kalacs",
-  onUpdate({ editor }) {
-    document.querySelectorAll("[data-has-reference] p").forEach((element) => {
-      for (const phrase in this.storage.pointers) {
-        const type = this.storage.pointers[phrase];
-        const phraseStartIndex = element.innerHTML.indexOf(phrase);
-        if (phraseStartIndex > -1) {
-          const phraseEndIndex = phraseStartIndex + phrase.length;
-          const phraseFound = element.innerHTML.substring(
-            phraseStartIndex,
-            phraseEndIndex
-          );
-          const replaceString = `<video-note-reference type="${type}">${phraseFound}</video-note-reference>`;
-          element.innerHTML = element.innerHTML.replace(phrase, replaceString);
-        }
-      }
-    });
-  },
+  marks: "videoNoteReference bold",
 
   addStorage() {
     return {
@@ -46,17 +29,10 @@ export default Node.create({
   },
   addKeyboardShortcuts() {
     return {
-      // ↓ your new keyboard shortcut
       Enter: () => this.editor.commands.insertContent("<br />"),
-      "Shift-Cmd-v": () => {
-        this.editor.commands.setMark("kalacs", { type: "vocabulary" });
-      },
-      "Shift-Cmd-r": () => {
-        this.editor.commands.setMark("kalacs", { type: "references" });
-      },
-      "Shift-Cmd-p": () => {
-        this.editor.commands.setMark("kalacs", { type: "pronunciation" });
-      },
+      "Shift-Cmd-v": () => this.editor.commands.addReference("vocabulary"),
+      "Shift-Cmd-r": () => this.editor.commands.addReference("references"),
+      "Shift-Cmd-p": () => this.editor.commands.addReference("pronunciation"),
     };
   },
   addAttributes() {
@@ -75,6 +51,22 @@ export default Node.create({
       },
       references: {
         default: null,
+        parseHTML: (node) => {
+          const references = node.attributes.getNamedItem("references");
+          if (references) {
+            return references.value
+              .split(";")
+              .reduce((map = new Map(), reference) => {
+                const [rawId, phrase] = reference.split("::");
+                const id = parseInt(rawId);
+                if (id) {
+                  map.set(id, phrase);
+                }
+                return map;
+              }, new Map());
+          }
+          return null;
+        },
       },
     };
   },
@@ -92,13 +84,10 @@ export default Node.create({
   addNodeView() {
     return (tools) => {
       const dom = document.createElement("div");
-      const { editor, node, getPos } = tools;
+      const { node } = tools;
       if (node.attrs.references) {
-        const references = node.attrs.references
-          .split(";")
-          .reduce((map, reference) => {
-            const [rawId, phrase] = reference.split("::");
-            const id = parseInt(rawId);
+        const references = [...node.attrs.references].reduce(
+          (map, [id, phrase]) => {
             if (id) {
               this.storage.hasReference.add(id);
               this.storage.pointers[phrase] = node.attrs.type;
@@ -110,7 +99,9 @@ export default Node.create({
               });
             }
             return map;
-          }, []);
+          },
+          []
+        );
         this.storage.sections.set(node.attrs.id, references);
       }
 
@@ -185,6 +176,79 @@ export default Node.create({
         dom,
         contentDOM: content,
       };
+    };
+  },
+  addCommands(...args) {
+    return {
+      addReference:
+        (type) =>
+        ({ editor, commands }) => {
+          const { state } = editor;
+          const transaction = state.tr;
+          const videoNoteNodePos =
+            state.selection.$anchor.pos -
+            state.selection.$anchor.parentOffset -
+            1;
+          const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
+          const phrase = window.getSelection().toString();
+          let relatedSection = null;
+          let relatedSectionPosition = 0;
+          let exitCondition = false;
+
+          state.doc.descendants((node, pos) => {
+            if (exitCondition) return false;
+            if (node.attrs.type === type) {
+              relatedSection = node;
+              relatedSectionPosition = pos;
+            }
+            if (videoNoteNode.attrs.id === node.attrs.id) {
+              exitCondition = true;
+              return false;
+            }
+          });
+          const endPosition =
+            relatedSectionPosition + relatedSection.nodeSize - 1;
+          // wrap the selected phrase
+          commands.setMark("videoNoteReference", {
+            type,
+          });
+          // insert phrase
+          commands.insertContentAt(
+            endPosition,
+            `<br /><strong>${phrase}</strong>`,
+            {
+              updateSelection: true,
+            }
+          );
+          commands.scrollIntoView();
+          // update references attribute
+          transaction.setNodeMarkup(relatedSectionPosition, undefined, {
+            ...relatedSection.attrs,
+          });
+          editor.view.dispatch(transaction);
+        },
+      markReferences: () => () => {
+        document
+          .querySelectorAll("[data-has-reference] p")
+          .forEach((element) => {
+            for (const phrase in this.storage.pointers) {
+              const type = this.storage.pointers[phrase];
+              const phraseStartIndex = element.innerHTML.indexOf(phrase);
+              if (phraseStartIndex > -1) {
+                const phraseEndIndex = phraseStartIndex + phrase.length;
+                const phraseFound = element.innerHTML.substring(
+                  phraseStartIndex,
+                  phraseEndIndex
+                );
+                const replaceString = `<video-note-reference type="${type}">${phraseFound}</video-note-reference>`;
+                element.innerHTML = element.innerHTML.replace(
+                  phrase,
+                  replaceString
+                );
+              }
+            }
+          });
+      },
     };
   },
 });

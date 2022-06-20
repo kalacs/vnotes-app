@@ -6,7 +6,6 @@
   import Span from "../../../extensions/span";
   import VideoNote from "../../../extensions/video-note";
   import VideoNoteReference from "../../../extensions/video-note-reference";
-  import { WindowManager } from "@tauri-apps/api/window";
 
   let element;
   let editor;
@@ -30,6 +29,7 @@
       )
       .then((content) => {
         editor.commands.setContent(content, true);
+        editor.commands.markReferences();
       })
       .catch(console.log);
   }
