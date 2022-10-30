@@ -132,35 +132,29 @@
           >
         </p>{/if}
     </div>
-    <div class="field has-addons menu bubble-menu">
+    <div class="buttons has-addons menu bubble-menu are-small is-rounded">
       {#if editor}
-        <p class="control">
-          <button
-            class="button is-primary is-outlined"
-            on:click={() => editor.chain().addReference("references").run()}
-            class:is-hovered={editor.isActive("videoNoteReference", {
-              type: "references",
-            })}>Reference</button
-          >
-        </p>
-        <p class="control">
-          <button
-            class="button is-info is-outlined"
-            on:click={() => editor.chain().addReference("vocabulary").run()}
-            class:is-hovered={editor.isActive("videoNoteReference", {
-              type: "vocabulary",
-            })}>Vocabulary</button
-          >
-        </p>
-        <p class="control">
-          <button
-            class="button is-danger is-outlined"
-            on:click={() => editor.chain().addReference("pronunciation").run()}
-            class:is-hovered={editor.isActive("videoNoteReference", {
-              type: "pronunciation",
-            })}>Pronunciation</button
-          >
-        </p>
+        <button
+          class="button is-primary is-light is-rounded"
+          on:click={() => editor.chain().addReference("references").run()}
+          class:is-light={!editor.isActive("videoNoteReference", {
+            type: "references",
+          })}>Reference</button
+        >
+        <button
+          class="button is-info is-light is-rounded"
+          on:click={() => editor.chain().addReference("vocabulary").run()}
+          class:is-light={!editor.isActive("videoNoteReference", {
+            type: "vocabulary",
+          })}>Vocabulary</button
+        >
+        <button
+          class="button is-danger is-light is-rounded"
+          on:click={() => editor.chain().addReference("pronunciation").run()}
+          class:is-light={!editor.isActive("videoNoteReference", {
+            type: "pronunciation",
+          })}>Pronunciation</button
+        >
       {/if}
     </div>
   </div>

@@ -191,6 +191,7 @@ export default Node.create({
             1;
           const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
           const phrase = window.getSelection().toString();
+          console.log({ phrase, selection: window.getSelection() });
           let relatedSection = null;
           let relatedSectionPosition = 0;
           let exitCondition = false;
