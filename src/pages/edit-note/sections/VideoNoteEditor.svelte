@@ -6,6 +6,7 @@
   import Span from "../../../extensions/span";
   import VideoNote from "../../../extensions/video-note";
   import VideoNoteReference from "../../../extensions/video-note-reference";
+  import BubbleMenu from "../../../extensions/bubble-menu";
 
   let element;
   let editor;
@@ -37,7 +38,15 @@
   onMount(() => {
     editor = new Editor({
       element: element,
-      extensions: [VideoNoteReference, Span, StarterKit, VideoNote],
+      extensions: [
+        VideoNoteReference,
+        Span,
+        StarterKit,
+        VideoNote,
+        BubbleMenu.configure({
+          element: document.querySelector(".menu"),
+        }),
+      ],
       content: "",
       onTransaction: () => {
         // force re-render so `editor.isActive` works as expected
@@ -122,6 +131,37 @@
             >Add VideoNote</button
           >
         </p>{/if}
+    </div>
+    <div class="field has-addons menu bubble-menu">
+      {#if editor}
+        <p class="control">
+          <button
+            class="button is-primary is-outlined"
+            on:click={() => editor.chain().addReference("references").run()}
+            class:is-hovered={editor.isActive("videoNoteReference", {
+              type: "references",
+            })}>Reference</button
+          >
+        </p>
+        <p class="control">
+          <button
+            class="button is-info is-outlined"
+            on:click={() => editor.chain().addReference("vocabulary").run()}
+            class:is-hovered={editor.isActive("videoNoteReference", {
+              type: "vocabulary",
+            })}>Vocabulary</button
+          >
+        </p>
+        <p class="control">
+          <button
+            class="button is-danger is-outlined"
+            on:click={() => editor.chain().addReference("pronunciation").run()}
+            class:is-hovered={editor.isActive("videoNoteReference", {
+              type: "pronunciation",
+            })}>Pronunciation</button
+          >
+        </p>
+      {/if}
     </div>
   </div>
   <div class="column is-half editor-container">

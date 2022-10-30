@@ -61,7 +61,7 @@ export default Mark.create({
         class:
           "tag is-medium is-rounded has-text-weight-bold is-clickable " +
           spanClass,
-        ["contenteditable"]: false,
+        ["contenteditable"]: true,
       }),
       0,
     ];
