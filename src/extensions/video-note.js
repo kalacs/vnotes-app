@@ -178,9 +178,9 @@ export default Node.create({
       };
     };
   },
-  addCommands(...args) {
+  addCommands() {
     return {
-      addReference:
+      addAnnotation:
         (type) =>
         ({ editor, commands }) => {
           const { state } = editor;
@@ -191,7 +191,6 @@ export default Node.create({
             1;
           const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
           const phrase = window.getSelection().toString();
-          console.log({ phrase, selection: window.getSelection() });
           let relatedSection = null;
           let relatedSectionPosition = 0;
           let exitCondition = false;
@@ -228,7 +227,18 @@ export default Node.create({
           });
           editor.view.dispatch(transaction);
         },
+      toggleAnnotation:
+        (type) =>
+        ({ editor, commands }) => {
+          if (editor.isActive("videoNoteReference")) {
+            commands.removeAnnotation(type);
+          } else {
+            commands.addAnnotation(type);
+          }
+          return true;
+        },
       markReferences: () => () => {
+        // TODO: fix annotation attributes
         document
           .querySelectorAll("[data-has-reference] p")
           .forEach((element) => {
@@ -250,6 +260,11 @@ export default Node.create({
             }
           });
       },
+      removeAnnotation:
+        (type) =>
+        ({ commands }) => {
+          commands.toggleMark("videoNoteReference", { type });
+        },
     };
   },
 });

@@ -1,5 +1,5 @@
 import { mergeAttributes, Node, Mark } from "@tiptap/core";
-import { Plugin, PluginKey } from "prosemirror-state";
+
 const REFERENCE_TYPES = {
   vocabulary: "vocabulary",
   references: "references",
@@ -10,6 +10,22 @@ export default Mark.create({
   name: "videoNoteReference",
   priority: 1000,
   selectable: true,
+  onCreate: () => {
+    window.selectAnnotation = (element) => {
+      const role = element.attributes.getNamedItem("role")?.value;
+
+      if (role !== "annotation") {
+        return true;
+      }
+      let range = new Range();
+
+      range.setStart(element, 0);
+      range.setEnd(element, 1);
+
+      document.getSelection().removeAllRanges();
+      document.getSelection().addRange(range);
+    };
+  },
   addAttributes() {
     return {
       type: {
@@ -23,6 +39,9 @@ export default Mark.create({
       },
       selected: {
         default: false,
+      },
+      role: {
+        default: "annotation",
       },
     };
   },
@@ -54,7 +73,6 @@ export default Mark.create({
     if (!HTMLAttributes.selected) {
       spanClass += " is-light";
     }
-
     return [
       "span",
       mergeAttributes(HTMLAttributes, {
@@ -62,36 +80,14 @@ export default Mark.create({
           "tag is-medium is-rounded has-text-weight-bold is-clickable " +
           spanClass,
         ["contenteditable"]: true,
+        onclick: "selectAnnotation(this)",
       }),
       0,
     ];
   },
   addKeyboardShortcuts() {
     return {
-      Backspace: ({ editor }) => {
-        return true;
-      },
-      "Shift-Backspace": ({ editor }) => {
-        const pos = editor.state.selection.$anchor.pos;
-        const selection = getSelection();
-        const parentElement = selection.anchorNode.parentElement;
-        const type = parentElement.attributes.getNamedItem("type")?.value;
-
-        if (Object.values(REFERENCE_TYPES).includes(type)) {
-          const from = pos - selection.anchorOffset;
-          const to = pos;
-          console.log("Reference", { pos, selection, from, to });
-          editor.commands.setNodeSelection(from);
-          const selectionOfVideoNoteReference = editor.state.selection;
-          console.log(editor.state.selection);
-          // TODO: remove reference and clean up
-          editor.commands.updateAttributes("videoNoteReference", {
-            selected: true,
-          });
-        }
-
-        return true;
-      },
+      Backspace: () => true,
     };
   },
 });

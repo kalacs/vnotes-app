@@ -65,3 +65,8 @@ button:not(:disabled):active {
 button:focus {
 	border-color: #666;
 }
+
+span::selection {
+	background: transparent;
+	cursor: none;
+}

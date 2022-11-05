@@ -136,21 +136,22 @@
       {#if editor}
         <button
           class="button is-primary is-light is-rounded"
-          on:click={() => editor.chain().addReference("references").run()}
+          on:click={() => editor.chain().toggleAnnotation("references").run()}
           class:is-light={!editor.isActive("videoNoteReference", {
             type: "references",
           })}>Reference</button
         >
         <button
           class="button is-info is-light is-rounded"
-          on:click={() => editor.chain().addReference("vocabulary").run()}
+          on:click={() => editor.chain().toggleAnnotation("vocabulary").run()}
           class:is-light={!editor.isActive("videoNoteReference", {
             type: "vocabulary",
           })}>Vocabulary</button
         >
         <button
           class="button is-danger is-light is-rounded"
-          on:click={() => editor.chain().addReference("pronunciation").run()}
+          on:click={() =>
+            editor.chain().toggleAnnotation("pronunciation").run()}
           class:is-light={!editor.isActive("videoNoteReference", {
             type: "pronunciation",
           })}>Pronunciation</button
