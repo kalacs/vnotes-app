@@ -31,10 +31,7 @@ export default Mark.create({
       type: {
         default: "",
       },
-      id: {
-        default: 0,
-      },
-      referenceId: {
+      sectionId: {
         default: 0,
       },
       selected: {

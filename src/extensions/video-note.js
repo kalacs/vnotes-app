@@ -23,8 +23,8 @@ export default Node.create({
   addStorage() {
     return {
       sections: new Map(),
-      pointers: {},
-      hasReference: new Set(),
+      pointers: new Map(),
+      hasAnnotation: new Map(),
     };
   },
   addKeyboardShortcuts() {
@@ -85,12 +85,16 @@ export default Node.create({
     return (tools) => {
       const dom = document.createElement("div");
       const { node } = tools;
+
       if (node.attrs.references) {
         const references = [...node.attrs.references].reduce(
           (map, [id, phrase]) => {
             if (id) {
-              this.storage.hasReference.add(id);
-              this.storage.pointers[phrase] = node.attrs.type;
+              this.storage.hasAnnotation.set(id, node.attrs.id);
+              this.storage.pointers.set(phrase, {
+                sectionType: node.attrs.type,
+                sectionId: node.attrs.id,
+              });
               map.push({
                 id,
                 phrase,
@@ -105,10 +109,10 @@ export default Node.create({
         this.storage.sections.set(node.attrs.id, references);
       }
 
-      if (this.storage.hasReference.has(node.attrs.id)) {
-        dom.dataset.hasReference = true;
+      if (this.storage.hasAnnotation.has(node.attrs.id)) {
+        dom.dataset.hasAnnotation = true;
       }
-
+      dom.dataset.id = node.attrs.id;
       dom.classList.add("video-note");
       dom.classList.add("box");
 
@@ -240,10 +244,10 @@ export default Node.create({
       markReferences: () => () => {
         // TODO: fix annotation attributes
         document
-          .querySelectorAll("[data-has-reference] p")
+          .querySelectorAll("[data-has-annotation] p")
           .forEach((element) => {
-            for (const phrase in this.storage.pointers) {
-              const type = this.storage.pointers[phrase];
+            for (const [phrase, pointer] of this.storage.pointers) {
+              const { sectionType: type, sectionId } = pointer;
               const phraseStartIndex = element.innerHTML.indexOf(phrase);
               if (phraseStartIndex > -1) {
                 const phraseEndIndex = phraseStartIndex + phrase.length;
@@ -251,7 +255,7 @@ export default Node.create({
                   phraseStartIndex,
                   phraseEndIndex
                 );
-                const replaceString = `<video-note-reference type="${type}">${phraseFound}</video-note-reference>`;
+                const replaceString = `<video-note-reference type="${type}" sectionId="${sectionId}">${phraseFound}</video-note-reference>`;
                 element.innerHTML = element.innerHTML.replace(
                   phrase,
                   replaceString
@@ -262,8 +266,35 @@ export default Node.create({
       },
       removeAnnotation:
         (type) =>
-        ({ commands }) => {
+        ({ editor, commands }) => {
+          const { state } = editor;
+          const videoNoteNodePos =
+            state.selection.$anchor.pos -
+            state.selection.$anchor.parentOffset -
+            1;
+          const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
+
+          const phrase = window.getSelection().toString();
+          const pointer = this.storage.pointers.get(phrase);
+          const videoNoteId = videoNoteNode.attrs.id;
+          const sectionId = this.storage.hasAnnotation.get(videoNoteId);
+          // update pointers
+          this.storage.pointers.delete(phrase);
+          // update sections
+          this.storage.sections.set(
+            sectionId,
+            this.storage.sections
+              .get(sectionId)
+              .filter(({ id }) => id !== videoNoteId)
+          );
+          // update hasAnnotation
+          this.storage.hasAnnotation.delete(videoNoteId);
+
           commands.toggleMark("videoNoteReference", { type });
+          window.getSelection().removeAllRanges();
+          window.alert(
+            `Don't forget to update "${pointer.sectionType}" section!`
+          );
         },
     };
   },
