@@ -1,4 +1,5 @@
 import { mergeAttributes, Node } from "@tiptap/core";
+import { getSelectedMark, removeFirstOccurenceInArray } from "./helpers";
 
 const capitalize = (s) => {
   if (typeof s !== "string") return "";
@@ -19,12 +20,12 @@ export default Node.create({
   group: "block",
   content: "inline*",
   marks: "videoNoteReference bold",
-
   addStorage() {
     return {
       sections: new Map(),
       pointers: new Map(),
       hasAnnotation: new Map(),
+      init: new Set(),
     };
   },
   addKeyboardShortcuts() {
@@ -53,15 +54,22 @@ export default Node.create({
         default: null,
         parseHTML: (node) => {
           const references = node.attributes.getNamedItem("references");
-          if (references) {
+          if (references?.value) {
             return references.value
               .split(";")
               .reduce((map = new Map(), reference) => {
                 const [rawId, phrase] = reference.split("::");
                 const id = parseInt(rawId);
-                if (id) {
-                  map.set(id, phrase);
+                if (!id) {
+                  return map;
                 }
+
+                if (!map.has(id)) {
+                  map.set(id, []);
+                }
+
+                map.set(id, [...map.get(id), phrase]);
+
                 return map;
               }, new Map());
           }
@@ -82,33 +90,43 @@ export default Node.create({
     return ["video-note", mergeAttributes(HTMLAttributes), 0];
   },
   addNodeView() {
-    return (tools) => {
+    return ({ node }) => {
       const dom = document.createElement("div");
-      const { node } = tools;
 
-      if (node.attrs.references) {
-        const references = [...node.attrs.references].reduce(
-          (map, [id, phrase]) => {
-            if (id) {
-              this.storage.hasAnnotation.set(id, node.attrs.id);
-              this.storage.pointers.set(phrase, {
-                sectionType: node.attrs.type,
-                sectionId: node.attrs.id,
-              });
-              map.push({
-                id,
-                phrase,
-                type: node.attrs.type,
-                parentId: node.attrs.id,
-              });
-            }
-            return map;
-          },
-          []
-        );
-        this.storage.sections.set(node.attrs.id, references);
+      if (!this.storage.init.has(node.attrs.id)) {
+        if (node.attrs.references) {
+          const references = [...node.attrs.references].reduce(
+            (map, [id, phrases]) => {
+              if (id) {
+                phrases.forEach((phrase) => {
+                  if (!this.storage.hasAnnotation.has(id)) {
+                    this.storage.hasAnnotation.set(id, []);
+                  }
+
+                  this.storage.hasAnnotation.set(id, [
+                    ...this.storage.hasAnnotation.get(id),
+                    node.attrs.id,
+                  ]);
+                  this.storage.pointers.set(phrase, {
+                    sectionType: node.attrs.type,
+                    sectionId: node.attrs.id,
+                  });
+                  map.push({
+                    id,
+                    phrase,
+                    type: node.attrs.type,
+                    parentId: node.attrs.id,
+                  });
+                });
+              }
+              return map;
+            },
+            []
+          );
+          this.storage.sections.set(node.attrs.id, references);
+        }
+        this.storage.init.add(node.attrs.id);
       }
-
       if (this.storage.hasAnnotation.has(node.attrs.id)) {
         dom.dataset.hasAnnotation = true;
       }
@@ -216,6 +234,33 @@ export default Node.create({
           commands.setMark("videoNoteReference", {
             type,
           });
+          const sectionId = relatedSection.attrs.id;
+          const videoNoteId = videoNoteNode.attrs.id;
+
+          // update hasAnnotation
+          if (!this.storage.hasAnnotation.has(videoNoteId)) {
+            this.storage.hasAnnotation.set(videoNoteId, []);
+          }
+          this.storage.hasAnnotation.set(videoNoteId, [
+            ...this.storage.hasAnnotation.get(videoNoteId),
+            sectionId,
+          ]);
+          // update pointers
+          this.storage.pointers.set(phrase, {
+            sectionType: type,
+            sectionId: sectionId,
+          });
+          // update sections
+          this.storage.sections.set(sectionId, [
+            ...this.storage.sections.get(sectionId),
+            {
+              id: videoNoteId,
+              phrase,
+              type,
+              parentId: sectionId,
+            },
+          ]);
+
           // insert phrase
           commands.insertContentAt(
             endPosition,
@@ -242,7 +287,6 @@ export default Node.create({
           return true;
         },
       markReferences: () => () => {
-        // TODO: fix annotation attributes
         document
           .querySelectorAll("[data-has-annotation] p")
           .forEach((element) => {
@@ -255,7 +299,7 @@ export default Node.create({
                   phraseStartIndex,
                   phraseEndIndex
                 );
-                const replaceString = `<video-note-reference type="${type}" sectionId="${sectionId}">${phraseFound}</video-note-reference>`;
+                const replaceString = `<video-note-reference type="${type}" sectionid="${sectionId}">${phraseFound}</video-note-reference>`;
                 element.innerHTML = element.innerHTML.replace(
                   phrase,
                   replaceString
@@ -264,38 +308,49 @@ export default Node.create({
             }
           });
       },
-      removeAnnotation:
-        (type) =>
-        ({ editor, commands }) => {
-          const { state } = editor;
-          const videoNoteNodePos =
-            state.selection.$anchor.pos -
-            state.selection.$anchor.parentOffset -
-            1;
-          const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
-
-          const phrase = window.getSelection().toString();
-          const pointer = this.storage.pointers.get(phrase);
-          const videoNoteId = videoNoteNode.attrs.id;
-          const sectionId = this.storage.hasAnnotation.get(videoNoteId);
-          // update pointers
-          this.storage.pointers.delete(phrase);
-          // update sections
-          this.storage.sections.set(
-            sectionId,
-            this.storage.sections
-              .get(sectionId)
-              .filter(({ id }) => id !== videoNoteId)
+      removeAnnotation: (type) => (x) => {
+        const { editor, commands } = x;
+        const thisO = this;
+        const { state } = editor;
+        const videoNoteNodePos =
+          state.selection.$anchor.pos -
+          state.selection.$anchor.parentOffset -
+          1;
+        const videoNoteNode = state.doc.nodeAt(videoNoteNodePos);
+        const annotationMark = getSelectedMark(state);
+        const phrase = window.getSelection().toString();
+        const pointer = this.storage.pointers.get(phrase);
+        const videoNoteId = videoNoteNode.attrs.id;
+        const sectionId = annotationMark.attrs.sectionId;
+        // update pointers
+        this.storage.pointers.delete(phrase);
+        // update sections
+        this.storage.sections.set(
+          sectionId,
+          this.storage.sections
+            .get(sectionId)
+            .filter(({ id }) => id !== videoNoteId)
+        );
+        // update hasAnnotation
+        if (this.storage.hasAnnotation.has(videoNoteId)) {
+          const annotations = removeFirstOccurenceInArray(
+            this.storage.hasAnnotation.get(videoNoteId),
+            (id) => id === sectionId
           );
-          // update hasAnnotation
-          this.storage.hasAnnotation.delete(videoNoteId);
 
-          commands.toggleMark("videoNoteReference", { type });
-          window.getSelection().removeAllRanges();
-          window.alert(
-            `Don't forget to update "${pointer.sectionType}" section!`
-          );
-        },
+          if (annotations.length === 0) {
+            this.storage.hasAnnotation.delete(videoNoteId);
+          } else {
+            this.storage.hasAnnotation.set(videoNoteId, annotations);
+          }
+        }
+
+        commands.toggleMark("videoNoteReference", { type });
+        window.getSelection().removeAllRanges();
+        window.alert(
+          `Don't forget to update "${pointer.sectionType}" section!`
+        );
+      },
     };
   },
 });

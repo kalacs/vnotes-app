@@ -4,7 +4,7 @@
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
   import Span from "../../../extensions/span";
-  import VideoNote from "../../../extensions/video-note";
+  import VideoNote from "../../../extensions/video-note/video-note";
   import VideoNoteReference from "../../../extensions/video-note-reference";
   import BubbleMenu from "../../../extensions/bubble-menu";
 
