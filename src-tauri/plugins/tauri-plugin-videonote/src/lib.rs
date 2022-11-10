@@ -35,38 +35,58 @@ struct VideoNote {
 }
 
 trait TransformVideoNotes {
-    fn to_html(&self) -> String {
+    fn to_html(&self, chapters: Vec<VideoChapter>) -> String {
         String::from("")
     }
 }
 
-impl TransformVideoNotes for Vec<VideoNote> {
-    fn to_html(&self) -> String {
-        let mut video_note_copy = self.clone();
-        video_note_copy
-            .iter_mut()
-            .map(|video_note| {
-                let content = video_note.payload.content.replace("\n", "<br />");
-                let mut references_content: String = String::from("");
+fn get_video_notes_between_time(video_notes: Vec<VideoNote>, start: f32, end: f32) -> Vec<VideoNote>{
+    video_notes.iter().filter(|video_note| video_note.start >= start && video_note.end <= end).map(|x| x.clone()).collect::<Vec<VideoNote>>()
+}
 
-                if let Some(references) = &video_note.payload.references {
-                  references_content = references.iter().map(|reference:&VideoNoteReference| format!("{}::{};", reference.id, reference.phrase)).reduce(|mut accum: String, item: String| {
+fn video_note_to_html(mut video_note: &VideoNote) -> String {
+    let content = video_note.payload.content.replace("\n", "<br />");
+    let mut references_content: String = String::from("");
+
+    if let Some(references) = &video_note.payload.references {
+      references_content = references.iter()
+        .map(|reference:&VideoNoteReference| format!("{}::{};", reference.id, reference.phrase))
+        .reduce(|mut accum: String, item: String| {
+            accum.push_str(&item.to_string());
+            accum
+        })
+        .unwrap()
+    }
+
+    return format!(
+        "<video-note type=\"{}\" start=\"{}\" end=\"{}\" references=\"{}\" id={}>{}</video-note>",
+        video_note.payload.r#type, video_note.start, video_note.end, references_content, video_note.id,content
+    );
+}
+
+impl TransformVideoNotes for Vec<VideoNote> {
+    fn to_html(&self, chapters: Vec<VideoChapter>) -> String {
+        // get video notes of a chapter
+        chapters.iter().map(|chapter: &VideoChapter| {
+            // iterate chapters
+            let test = self.clone();
+            let mut test2 = get_video_notes_between_time(test, chapter.start, chapter.end);
+            let video_notes_content = test2
+                .iter_mut()
+                .map(|video_note| {
+                    video_note_to_html(video_note)
+                })
+                .reduce(|mut accum: String, item: String| {
                     accum.push_str(&item.to_string());
                     accum
                 })
-                .unwrap()
-                }
-
-                return format!(
-                    "<video-note type=\"{}\" start=\"{}\" end=\"{}\" references=\"{}\" id={}>{}</video-note>",
-                    video_note.payload.r#type, video_note.start, video_note.end, references_content, video_note.id,content
-                );
-            })
-            .reduce(|mut accum: String, item: String| {
-                accum.push_str(&item.to_string());
-                accum
-            })
-            .unwrap()
+                .unwrap();
+            format!("<chapter title=\"{}\" start=\"{}\" end=\"{}\">{}</chapter>", chapter.title, chapter.start, chapter.end, video_notes_content)
+        }).reduce(|mut accum: String, item: String| {
+            accum.push_str(&item.to_string());
+            accum
+        })
+        .unwrap()
     }
 }
 
@@ -202,13 +222,14 @@ async fn import_srt_file<R: Runtime>(_app: AppHandle<R>, file_name: String) -> S
     let file = File::open(absolute_path).unwrap();
     let reader = BufReader::new(file);
     let video_notes: Vec<VideoNote> = transform_srt_to_json(reader);
-    video_notes.to_html()
+    video_notes.to_html(vec![])
 }
 
 #[tauri::command]
 fn open_video_notes<R: Runtime>(_app: AppHandle<R>, state: State<'_, PluginState>) -> String {
     let video_notes: &Vec<VideoNote> = &*state.loaded_notes.lock().unwrap();
-    video_notes.to_html()
+    let chapters = &*state.chapters.lock().unwrap();
+    video_notes.to_html(chapters.to_vec())
 }
 
 #[tauri::command]

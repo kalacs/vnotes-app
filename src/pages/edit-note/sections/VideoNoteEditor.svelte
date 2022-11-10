@@ -7,6 +7,7 @@
   import VideoNote from "../../../extensions/video-note/video-note";
   import VideoNoteReference from "../../../extensions/video-note-reference";
   import BubbleMenu from "../../../extensions/bubble-menu";
+  import Chapter from "../../../extensions/chapter";
 
   let element;
   let editor;
@@ -46,6 +47,7 @@
         BubbleMenu.configure({
           element: document.querySelector(".menu"),
         }),
+        Chapter,
       ],
       content: "",
       onTransaction: () => {
