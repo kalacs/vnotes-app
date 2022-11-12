@@ -70,3 +70,11 @@ span::selection {
 	background: transparent;
 	cursor: none;
 }
+
+.video-note.box > .header {
+	cursor: pointer;
+}
+
+.video-note.box.selected {
+	border: 1px solid hsl(217, 71%, 53%);
+}

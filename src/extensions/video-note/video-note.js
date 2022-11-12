@@ -50,6 +50,9 @@ export default Node.create({
       id: {
         default: 0,
       },
+      selected: {
+        default: false,
+      },
       references: {
         default: null,
         parseHTML: (node) => {
@@ -90,7 +93,8 @@ export default Node.create({
     return ["video-note", mergeAttributes(HTMLAttributes), 0];
   },
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, editor: { view }, getPos }) => {
+      console.log("RENDER");
       const dom = document.createElement("div");
 
       if (!this.storage.init.has(node.attrs.id)) {
@@ -134,13 +138,17 @@ export default Node.create({
       dom.classList.add("video-note");
       dom.classList.add("box");
 
+      if (node.attrs.selected) {
+        dom.classList.add("selected");
+      }
+
       const startSpan = document.createElement("span");
       const endSpan = document.createElement("span");
       const iconSpan = document.createElement("span");
       const icon = document.createElement("icon");
       const content = document.createElement("p");
       const columnContainer = document.createElement("div");
-      columnContainer.classList.add("columns", "is-centered");
+      columnContainer.classList.add("columns", "is-centered", "header");
 
       iconSpan.classList.add("icon", "column", "is-1");
       startSpan.classList.add(
@@ -193,6 +201,17 @@ export default Node.create({
       } else {
         dom.append(columnContainer, content);
       }
+
+      columnContainer.addEventListener("click", () => {
+        if (typeof getPos === "function") {
+          view.dispatch(
+            view.state.tr.setNodeMarkup(getPos(), undefined, {
+              ...node.attrs,
+              selected: !node.attrs.selected,
+            })
+          );
+        }
+      });
 
       return {
         dom,

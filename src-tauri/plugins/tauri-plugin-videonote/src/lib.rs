@@ -35,7 +35,7 @@ struct VideoNote {
 }
 
 trait TransformVideoNotes {
-    fn to_html(&self, chapters: Vec<VideoChapter>) -> String {
+    fn to_html(&self, _chapters: Vec<VideoChapter>) -> String {
         String::from("")
     }
 }
@@ -44,7 +44,7 @@ fn get_video_notes_between_time(video_notes: Vec<VideoNote>, start: f32, end: f3
     video_notes.iter().filter(|video_note| video_note.start >= start && video_note.end <= end).map(|x| x.clone()).collect::<Vec<VideoNote>>()
 }
 
-fn video_note_to_html(mut video_note: &VideoNote) -> String {
+fn video_note_to_html(video_note: &VideoNote) -> String {
     let content = video_note.payload.content.replace("\n", "<br />");
     let mut references_content: String = String::from("");
 
@@ -66,12 +66,32 @@ fn video_note_to_html(mut video_note: &VideoNote) -> String {
 
 impl TransformVideoNotes for Vec<VideoNote> {
     fn to_html(&self, chapters: Vec<VideoChapter>) -> String {
-        // get video notes of a chapter
-        chapters.iter().map(|chapter: &VideoChapter| {
-            // iterate chapters
-            let test = self.clone();
-            let mut test2 = get_video_notes_between_time(test, chapter.start, chapter.end);
-            let video_notes_content = test2
+        if chapters.len() > 0 {
+            // get video notes of a chapter
+            return chapters.iter().map(|chapter: &VideoChapter| {
+                // iterate chapters
+                let test = self.clone();
+                let mut test2 = get_video_notes_between_time(test, chapter.start, chapter.end);
+                let video_notes_content = test2
+                    .iter_mut()
+                    .map(|video_note| {
+                        video_note_to_html(video_note)
+                    })
+                    .reduce(|mut accum: String, item: String| {
+                        accum.push_str(&item.to_string());
+                        accum
+                    })
+                    .unwrap();
+                format!("<chapter title=\"{}\" start=\"{}\" end=\"{}\">{}</chapter>", chapter.title, chapter.start, chapter.end, video_notes_content)
+            }).reduce(|mut accum: String, item: String| {
+                accum.push_str(&item.to_string());
+                accum
+            })
+            .unwrap()
+        } else {
+            // get video notes of a chapter
+            let mut test = self.clone();
+            return test
                 .iter_mut()
                 .map(|video_note| {
                     video_note_to_html(video_note)
@@ -81,12 +101,8 @@ impl TransformVideoNotes for Vec<VideoNote> {
                     accum
                 })
                 .unwrap();
-            format!("<chapter title=\"{}\" start=\"{}\" end=\"{}\">{}</chapter>", chapter.title, chapter.start, chapter.end, video_notes_content)
-        }).reduce(|mut accum: String, item: String| {
-            accum.push_str(&item.to_string());
-            accum
-        })
-        .unwrap()
+        }
+
     }
 }
 
