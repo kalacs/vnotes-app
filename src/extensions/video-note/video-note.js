@@ -1,5 +1,7 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { getSelectedMark, removeFirstOccurenceInArray } from "./helpers";
+import { NodeRange } from "prosemirror-model";
+import { SelectionRange } from "prosemirror-state";
 
 const capitalize = (s) => {
   if (typeof s !== "string") return "";
@@ -93,9 +95,10 @@ export default Node.create({
     return ["video-note", mergeAttributes(HTMLAttributes), 0];
   },
   addNodeView() {
-    return ({ node, editor: { view }, getPos }) => {
-      console.log("RENDER");
+    return ({ node, editor, getPos }) => {
       const dom = document.createElement("div");
+      const { view } = editor;
+      const doc = view.state.doc;
 
       if (!this.storage.init.has(node.attrs.id)) {
         if (node.attrs.references) {
@@ -216,6 +219,57 @@ export default Node.create({
       return {
         dom,
         contentDOM: content,
+        update: () => {
+          setTimeout(() => {
+            const selectedVideoNotes = view.dom.querySelectorAll(
+              ".video-note.box.selected"
+            );
+            if (selectedVideoNotes.length === 2) {
+              const startElement = selectedVideoNotes[0];
+              const endElement = selectedVideoNotes[1];
+              const startPosition = view.posAtDOM(startElement) - 1;
+              const endPosition = view.posAtDOM(endElement) - 1;
+              const startNode = view.state.doc.nodeAt(startPosition);
+              const endNode = view.state.doc.nodeAt(endPosition);
+              const chapterElement = document.createElement("chapter");
+              chapterElement.setAttribute("title", "New chapter");
+              chapterElement.setAttribute("start", startNode.attrs.start);
+              chapterElement.setAttribute("end", endNode.attrs.end);
+
+              let range = new Range();
+              range.setStartBefore(startElement);
+              range.setEndAfter(endElement);
+
+              window.getSelection().removeAllRanges();
+              window.getSelection().addRange(range);
+              range.surroundContents(chapterElement);
+              window.getSelection().removeAllRanges();
+
+              setTimeout(() => {
+                const [startElement, endElement] = view.dom.querySelectorAll(
+                  ".video-note.box.selected"
+                );
+                const startPosition = view.posAtDOM(startElement) - 1;
+                const endPosition = view.posAtDOM(endElement) - 1;
+                const startNode = view.state.doc.nodeAt(startPosition);
+                const endNode = view.state.doc.nodeAt(endPosition);
+
+                view.dispatch(
+                  view.state.tr.setNodeMarkup(startPosition, undefined, {
+                    ...startNode.attrs,
+                    selected: false,
+                  })
+                );
+                view.dispatch(
+                  view.state.tr.setNodeMarkup(endPosition, undefined, {
+                    ...endNode.attrs,
+                    selected: false,
+                  })
+                );
+              }, 10);
+            }
+          }, 100);
+        },
       };
     };
   },
