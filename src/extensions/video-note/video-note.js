@@ -1,7 +1,5 @@
 import { mergeAttributes, Node } from "@tiptap/core";
 import { getSelectedMark, removeFirstOccurenceInArray } from "./helpers";
-import { NodeRange } from "prosemirror-model";
-import { SelectionRange } from "prosemirror-state";
 
 const capitalize = (s) => {
   if (typeof s !== "string") return "";

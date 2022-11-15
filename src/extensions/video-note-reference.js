@@ -1,6 +1,6 @@
 import { mergeAttributes, Node, Mark } from "@tiptap/core";
 
-const REFERENCE_TYPES = {
+export const REFERENCE_TYPES = {
   vocabulary: "vocabulary",
   references: "references",
   pronunciation: "pronunciation",

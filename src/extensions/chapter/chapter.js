@@ -1,4 +1,5 @@
 import { mergeAttributes, Node } from "@tiptap/core";
+import { REFERENCE_TYPES } from "../video-note-reference";
 
 function formatSeconds(totalSeconds) {
   const [mainPart, fragmentPart] = (totalSeconds + "").split(".");
@@ -9,6 +10,27 @@ function formatSeconds(totalSeconds) {
     seconds < 10 ? `0${seconds}` : seconds
   }.${fragmentPart}`;
 }
+
+function createCardHeaderButton({ document, icon, type }) {
+  const cardHeaderButton = document.createElement("button");
+  const cardHeaderButtonIconContainer = document.createElement("span");
+  const cardHeaderButtonIcon = document.createElement("i");
+
+  cardHeaderButtonIcon.classList.add("mdi", `mdi-${icon}`);
+  cardHeaderButtonIconContainer.classList.add("icon");
+  cardHeaderButton.classList.add(
+    "button",
+    `is-${type}`,
+    "is-rounded",
+    "is-outlined"
+  );
+
+  cardHeaderButton.append(cardHeaderButtonIconContainer);
+  cardHeaderButtonIconContainer.append(cardHeaderButtonIcon);
+
+  return cardHeaderButton;
+}
+
 export const Chapter = Node.create({
   name: "chapter",
   group: "block",
@@ -39,44 +61,72 @@ export const Chapter = Node.create({
     return ["chapter", mergeAttributes(HTMLAttributes), 0];
   },
   addNodeView() {
-    return ({ node }) => {
-      /*
-<div class="card">
-  <header class="card-header">
-    <p class="card-header-title">
-      Component
-    </p>
-    <button class="card-header-icon" aria-label="more options">
-      <span class="icon">
-        <i class="fas fa-angle-down" aria-hidden="true"></i>
-      </span>
-    </button>
-  </header>
-  <div class="card-content">
-    <div class="content">
-    </div>
-  </div>
-  <footer class="card-footer">
-    <a href="#" class="card-footer-item">Save</a>
-    <a href="#" class="card-footer-item">Edit</a>
-    <a href="#" class="card-footer-item">Delete</a>
-  </footer>
-</div>
-*/
-
+    return ({ node, getPos, editor }) => {
+      const { view } = editor;
       const dom = document.createElement("div");
 
       dom.classList.add("card");
 
       const cardHeader = document.createElement("header");
       const cardHeaderTitle = document.createElement("p");
+      const cardHeaderButtonVocabulary = createCardHeaderButton({
+        document,
+        icon: "book-open",
+        type: "info",
+      });
+      const cardHeaderButtonPronunciation = createCardHeaderButton({
+        document,
+        icon: "account-voice",
+        type: "danger",
+      });
+      const cardHeaderButtonReference = createCardHeaderButton({
+        document,
+        icon: "account-question",
+        type: "primary",
+      });
+
+      cardHeaderButtonVocabulary.addEventListener("click", () => {
+        if (typeof getPos === "function") {
+          editor.commands.insertVideoNote({
+            chapter: node,
+            position: getPos() + 1,
+            type: REFERENCE_TYPES.vocabulary,
+          });
+        }
+      });
+
+      cardHeaderButtonPronunciation.addEventListener("click", () => {
+        if (typeof getPos === "function") {
+          editor.commands.insertVideoNote({
+            chapter: node,
+            position: getPos() + 1,
+            type: REFERENCE_TYPES.pronunciation,
+          });
+        }
+      });
+
+      cardHeaderButtonReference.addEventListener("click", () => {
+        if (typeof getPos === "function") {
+          editor.commands.insertVideoNote({
+            chapter: node,
+            position: getPos() + 1,
+            type: REFERENCE_TYPES.references,
+          });
+        }
+      });
+
       cardHeader.classList.add("card-header");
       cardHeaderTitle.classList.add("card-header-title");
       cardHeaderTitle.innerText =
         node.attrs.title +
         formatSeconds(node.attrs.start) +
         formatSeconds(node.attrs.end);
-      cardHeader.append(cardHeaderTitle);
+      cardHeader.append(
+        cardHeaderTitle,
+        cardHeaderButtonVocabulary,
+        cardHeaderButtonPronunciation,
+        cardHeaderButtonReference
+      );
 
       const cardContent = document.createElement("div");
       const cardContentContent = document.createElement("div");
@@ -94,6 +144,25 @@ export const Chapter = Node.create({
         dom,
         contentDOM: cardContent,
       };
+    };
+  },
+  addCommands() {
+    return {
+      insertVideoNote:
+        ({
+          chapter: {
+            attrs: { start, end },
+          },
+          position,
+          type,
+        }) =>
+        ({ commands }) => {
+          const calculatedId = 100;
+          commands.insertContentAt(
+            position,
+            `<video-note type="${type}" start="${start}" end="${end}" references="" id="${calculatedId}"></video-note>`
+          );
+        },
     };
   },
 });

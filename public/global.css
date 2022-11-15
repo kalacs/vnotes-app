@@ -78,3 +78,13 @@ span::selection {
 .video-note.box.selected {
 	border: 1px solid hsl(217, 71%, 53%);
 }
+
+.card-header .button.is-rounded {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+.card {
+	border-left: 2px solid blueviolet;
+	margin-bottom: 1em;
+}
