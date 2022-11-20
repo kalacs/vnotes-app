@@ -301,12 +301,13 @@ export default Node.create({
           });
           const endPosition =
             relatedSectionPosition + relatedSection.nodeSize - 1;
+          const sectionId = relatedSection.attrs.id;
+          const videoNoteId = videoNoteNode.attrs.id;
           // wrap the selected phrase
           commands.setMark("videoNoteReference", {
             type,
+            sectionId,
           });
-          const sectionId = relatedSection.attrs.id;
-          const videoNoteId = videoNoteNode.attrs.id;
 
           // update hasAnnotation
           if (!this.storage.hasAnnotation.has(videoNoteId)) {
@@ -342,8 +343,12 @@ export default Node.create({
           );
           commands.scrollIntoView();
           // update references attribute
+          const references = relatedSection.attrs.references;
+          references.set(videoNoteId, [phrase]);
+
           transaction.setNodeMarkup(relatedSectionPosition, undefined, {
             ...relatedSection.attrs,
+            references,
           });
           editor.view.dispatch(transaction);
         },
