@@ -82,9 +82,4 @@ export default Mark.create({
       0,
     ];
   },
-  addKeyboardShortcuts() {
-    return {
-      Backspace: () => true,
-    };
-  },
 });

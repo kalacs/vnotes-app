@@ -76,7 +76,7 @@ export default Node.create({
                 return map;
               }, new Map());
           }
-          return null;
+          return new Map();
         },
       },
     };
@@ -322,6 +322,11 @@ export default Node.create({
             sectionType: type,
             sectionId: sectionId,
           });
+
+          if (!this.storage.sections.has(sectionId)) {
+            this.storage.sections.set(sectionId, []);
+          }
+
           // update sections
           this.storage.sections.set(sectionId, [
             ...this.storage.sections.get(sectionId),
@@ -336,7 +341,7 @@ export default Node.create({
           // insert phrase
           commands.insertContentAt(
             endPosition,
-            `<br /><strong>${phrase}</strong>`,
+            `<br /><strong>${phrase}:</strong>&nbsp;`,
             {
               updateSelection: true,
             }
