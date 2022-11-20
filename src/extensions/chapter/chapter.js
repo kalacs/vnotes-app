@@ -157,7 +157,8 @@ export const Chapter = Node.create({
           type,
         }) =>
         ({ commands }) => {
-          const calculatedId = 100;
+          const array = new Uint32Array(1);
+          const [calculatedId] = window.crypto.getRandomValues(array);
           commands.insertContentAt(
             position,
             `<video-note type="${type}" start="${start}" end="${end}" references="" id="${calculatedId}"></video-note>`
