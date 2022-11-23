@@ -4,7 +4,7 @@
 
 <div id="main" class="container is-fullhd">
   <section id="video-note-info" class="section">
-    <h1 class="is-size-3">VideoNote editor</h1>
+    <h1 class="is-size-3">Edit notes for Friends S01 E01</h1>
   </section>
   <section id="video-note-editor" class="section">
     <VideoNoteEditor />

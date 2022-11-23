@@ -324,6 +324,14 @@ async fn load_notes<R: Runtime>(
     Ok(())
 }
 
+#[tauri::command]
+async fn save_notes<R: Runtime>(
+    _app: AppHandle<R>,
+    editor_json: serde_json::Value,
+) -> Result<String, ()> {
+    Ok("Result".to_string())
+}
+
 fn round(number: f32) -> f32 {
     format!("{:.1}", number).parse::<f32>().unwrap()
 }
@@ -432,6 +440,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             load_notes,
             import_srt_file,
             open_video_notes,
+            save_notes,
         ])
         .build()
 }

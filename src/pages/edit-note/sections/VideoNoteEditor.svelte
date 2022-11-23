@@ -36,6 +36,17 @@
       .catch(console.log);
   }
 
+  const saveNotes = () => {
+    console.log(editor.getJSON());
+    invoke("plugin:videonote|save_notes", {
+      editorJson: editor.getJSON(),
+    })
+      .then((result) => {
+        window.alert(result);
+      })
+      .catch(console.log);
+  };
+
   onMount(() => {
     editor = new Editor({
       element: element,
@@ -66,8 +77,11 @@
 
 <div class="columns is-multiline">
   <div class="column is-full">
-    <button class="button" on:click={importSRTFile}>Import .srt</button>
-    <button class="button" on:click={loadVideoNote}>Open VideoNote</button>
+    <button class="button" on:click={importSRTFile}
+      >Import From Subtitles</button
+    >
+    <button class="button" on:click={loadVideoNote}>Load Notes</button>
+    <button class="button" on:click={saveNotes}>Save</button>
     <div class="buttons has-addons menu bubble-menu are-small is-rounded">
       {#if editor}
         <button
