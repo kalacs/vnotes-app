@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::{Value, Map};
 use std::{
     fs::File,
     io::{BufRead, BufReader, Error, Read},
@@ -82,7 +83,7 @@ impl TransformVideoNotes for Vec<VideoNote> {
                         accum
                     })
                     .unwrap();
-                format!("<chapter title=\"{}\" start=\"{}\" end=\"{}\">{}</chapter>", chapter.title, chapter.start, chapter.end, video_notes_content)
+                format!("<chapter id=\"{}\" title=\"{}\" start=\"{}\" end=\"{}\">{}</chapter>", chapter.id, chapter.title, chapter.start, chapter.end, video_notes_content)
             }).reduce(|mut accum: String, item: String| {
                 accum.push_str(&item.to_string());
                 accum
@@ -146,6 +147,11 @@ struct VideoEventEnd {
     name: String,
     time: f32,
     data: Option<VideoNoteEnd>,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct EditorContent {
+    content: Vec<Value>,
 }
 
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
@@ -324,11 +330,68 @@ async fn load_notes<R: Runtime>(
     Ok(())
 }
 
+fn convert_editor_video_note_to_video_note(item: Value)-> VideoNote {
+    return VideoNote {
+        id: item["attrs"]["id"].as_i64().unwrap() as i32,
+        start: item["attrs"]["start"].as_f64().unwrap() as f32,
+        end: item["attrs"]["end"].as_f64().unwrap() as f32,
+        payload: VideoNotePayload {
+            content: "Test".to_string(),
+            r#type: item["attrs"]["type"].as_str().unwrap().to_string(),
+            references: convert_references_to_video_note_references(item["attrs"]["references"].as_object().unwrap().clone()),
+        }                            
+    }
+}
+
+fn convert_references_to_video_note_references(references: Map<std::string::String, Value>) -> Option<Vec<VideoNoteReference>>{
+    if references.is_empty() {
+        return None;
+    }
+
+    let mut video_note_references = Vec::<VideoNoteReference>::with_capacity(100);
+
+    for (id, phrases) in references {
+        for phrase in phrases.as_array().unwrap() {
+            video_note_references.push(VideoNoteReference { id: id.parse().unwrap(), phrase: phrase.clone().as_str().unwrap().to_string() });   
+        }
+    }
+
+    Some(video_note_references)
+}
+
 #[tauri::command]
 async fn save_notes<R: Runtime>(
     _app: AppHandle<R>,
-    editor_json: serde_json::Value,
+    editor_json: EditorContent,
 ) -> Result<String, ()> {
+    let mut chapters = Vec::<VideoChapter>::with_capacity(100);
+    let mut notes = Vec::<VideoNote>::with_capacity(100);
+    let content: Vec<Value> = editor_json.content;
+
+    for item in content {
+        match item["type"].as_str() {
+            Some("chapter") => {
+                chapters.push(VideoChapter {
+                    id: item["attrs"]["id"].as_i64().unwrap() as i32,
+                    title: item["attrs"]["title"].as_str().unwrap().to_string(),
+                    start: item["attrs"]["start"].as_f64().unwrap() as f32,
+                    end: item["attrs"]["end"].as_f64().unwrap() as f32,                            
+                });
+                let chapter_content = item["content"].clone();
+                if let Value::Array(video_notes) = chapter_content  {
+                    for item in video_notes {
+                        notes.push(convert_editor_video_note_to_video_note(item))
+                    }
+                }
+            },
+            Some("videoNote") => notes.push(convert_editor_video_note_to_video_note(item)),
+            _ => print!("Else"),
+        }
+    }
+//    println!("TIME: {:?}", chapters);
+//    println!("TIME: {:?}", notes);
+
+    
     Ok("Result".to_string())
 }
 

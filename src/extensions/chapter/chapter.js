@@ -38,6 +38,9 @@ export const Chapter = Node.create({
   marks: "videoNoteReference bold",
   addAttributes() {
     return {
+      id: {
+        default: 0,
+      },
       title: {
         default: "",
       },

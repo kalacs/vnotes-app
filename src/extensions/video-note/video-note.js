@@ -58,25 +58,22 @@ export default Node.create({
         parseHTML: (node) => {
           const references = node.attributes.getNamedItem("references");
           if (references?.value) {
-            return references.value
-              .split(";")
-              .reduce((map = new Map(), reference) => {
-                const [rawId, phrase] = reference.split("::");
-                const id = parseInt(rawId);
-                if (!id) {
-                  return map;
-                }
-
-                if (!map.has(id)) {
-                  map.set(id, []);
-                }
-
-                map.set(id, [...map.get(id), phrase]);
-
+            return references.value.split(";").reduce((map, reference) => {
+              const [rawId, phrase] = reference.split("::");
+              const id = parseInt(rawId);
+              if (!id) {
                 return map;
-              }, new Map());
+              }
+
+              if (!(id in map)) {
+                map[id] = [];
+              }
+              map[id] = [...map[id], phrase];
+
+              return map;
+            }, {});
           }
-          return new Map();
+          return {};
         },
       },
     };
@@ -100,7 +97,7 @@ export default Node.create({
 
       if (!this.storage.init.has(node.attrs.id)) {
         if (node.attrs.references) {
-          const references = [...node.attrs.references].reduce(
+          const references = Object.entries(node.attrs.references).reduce(
             (map, [id, phrases]) => {
               if (id) {
                 phrases.forEach((phrase) => {
@@ -349,7 +346,7 @@ export default Node.create({
           commands.scrollIntoView();
           // update references attribute
           const references = relatedSection.attrs.references;
-          references.set(videoNoteId, [phrase]);
+          references[videoNoteId] = [phrase];
 
           transaction.setNodeMarkup(relatedSectionPosition, undefined, {
             ...relatedSection.attrs,
