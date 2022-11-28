@@ -331,12 +331,32 @@ async fn load_notes<R: Runtime>(
 }
 
 fn convert_editor_video_note_to_video_note(item: Value)-> VideoNote {
+    let mut video_note_content = String::from("");
+
+    for fragment in item["content"].as_array().unwrap() {
+        let mut text = String::from("");
+        
+        if fragment["type"].as_str() == Some("text") {
+            text = fragment["text"].as_str().unwrap().to_string();
+
+            if fragment["marks"].as_array() != None {
+                text = format!("<strong>{}</strong>", &fragment["text"].as_str().unwrap());
+            }
+        }
+
+        match fragment["type"].as_str().unwrap() {
+            "text" => video_note_content.push_str(&text),
+            "hardBreak" => video_note_content.push_str("\n"),
+            _ => video_note_content.push_str(""),
+        }
+    }
+
     return VideoNote {
         id: item["attrs"]["id"].as_i64().unwrap() as i32,
         start: item["attrs"]["start"].as_f64().unwrap() as f32,
         end: item["attrs"]["end"].as_f64().unwrap() as f32,
         payload: VideoNotePayload {
-            content: "Test".to_string(),
+            content: video_note_content.to_string(),
             r#type: item["attrs"]["type"].as_str().unwrap().to_string(),
             references: convert_references_to_video_note_references(item["attrs"]["references"].as_object().unwrap().clone()),
         }                            
@@ -388,9 +408,6 @@ async fn save_notes<R: Runtime>(
             _ => print!("Else"),
         }
     }
-//    println!("TIME: {:?}", chapters);
-//    println!("TIME: {:?}", notes);
-
     
     Ok("Result".to_string())
 }
