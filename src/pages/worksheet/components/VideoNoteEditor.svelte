@@ -1,5 +1,5 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
+  import { onMount, onDestroy, afterUpdate } from "svelte";
   import { invoke } from "@tauri-apps/api/tauri";
   import { Editor } from "@tiptap/core";
   import StarterKit from "@tiptap/starter-kit";
@@ -9,57 +9,16 @@
   import BubbleMenu from "../../../extensions/bubble-menu";
   import Chapter from "../../../extensions/chapter";
 
+  export let editorContent;
   let element;
   let editor;
 
-  function importSRTFile() {
-    invoke("plugin:videonote|import_srt_file", {
-      fileName: "Friends - 1x01.en.srt",
-    })
-      .then((content) => {
-        editor.commands.setContent(content, true);
-      })
-      .catch(console.log);
+  $: {
+    if (editorContent) {
+      editor.commands.setContent(editorContent, true);
+      editor.commands.markReferences();
+    }
   }
-
-  function loadVideoNote() {
-    invoke("plugin:videonote|load_notes", {
-      id: 1,
-    })
-      .then(() =>
-        invoke("plugin:videonote|open_video_notes", {
-          fileName: "Friends - 1x01.en.srt",
-          id: 1,
-        })
-      )
-      .then((content) => {
-        editor.commands.setContent(content, true);
-        editor.commands.markReferences();
-      })
-      .catch(console.log);
-  }
-
-  const createNotes = () => {
-    console.log(editor.getJSON());
-    invoke("plugin:videonote|save_notes", {
-      editorJson: editor.getJSON(),
-    })
-      .then((result) => {
-        window.alert(result);
-      })
-      .catch(console.log);
-  };
-
-  const updateNotes = () => {
-    console.log(editor.getJSON());
-    invoke("plugin:videonote|save_notes", {
-      editorJson: editor.getJSON(),
-    })
-      .then((result) => {
-        window.alert(result);
-      })
-      .catch(console.log);
-  };
 
   onMount(() => {
     editor = new Editor({
@@ -91,12 +50,6 @@
 
 <div class="columns is-multiline">
   <div class="column is-full">
-    <button class="button" on:click={importSRTFile}
-      >Import From Subtitles</button
-    >
-    <button class="button" on:click={loadVideoNote}>Load Notes</button>
-    <button class="button" on:click={createNotes}>Create</button>
-    <button class="button" on:click={updateNotes}>Update</button>
     <div class="buttons has-addons menu bubble-menu are-small is-rounded">
       {#if editor}
         <button

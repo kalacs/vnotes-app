@@ -21,31 +21,82 @@
 
   export let worksheet;
   export let worksheets = [];
+  let editorContent = "";
+
+  $: {
+    if (worksheet?.id) {
+      invoke("plugin:videonote|load_notes", {
+        id: worksheet.id,
+      })
+        .then(() => invoke("plugin:videonote|open_video_notes"))
+        .then((result) => {
+          editorContent = result;
+        })
+        .catch(console.error);
+    }
+  }
+
+  function importSRTFile() {
+    invoke("plugin:videonote|import_srt_file", {
+      fileName: "Friends - 1x01.en.srt",
+    })
+      .then((content) => {
+        editor.commands.setContent(content, true);
+      })
+      .catch(console.log);
+  }
+
+  const createNotes = () => {
+    console.log(editor.getJSON());
+    invoke("plugin:videonote|save_notes", {
+      editorJson: editor.getJSON(),
+    })
+      .then((result) => {
+        window.alert(result);
+      })
+      .catch(console.log);
+  };
+
+  const updateNotes = () => {
+    console.log(editor.getJSON());
+    invoke("plugin:videonote|save_notes", {
+      editorJson: editor.getJSON(),
+    })
+      .then((result) => {
+        window.alert(result);
+      })
+      .catch(console.log);
+  };
 
   onMount(() => {
     invoke("plugin:videonote|get_all_worksheets")
       .then((result) => {
         worksheets = result;
       })
-      .catch(console.log);
+      .catch(console.error);
   });
 </script>
 
 <div id="main" class="container is-fullhd">
   <section id="video-note-info" class="section">
-    <h1 class="is-size-3">Edit notes for Friends S01 E01</h1>
+    <h1 class="is-size-3">Worksheets</h1>
   </section>
   <section id="worksheets" class="section">
     <Worksheets
-      on:select-worksheet={(selectedWorksheet) => {
-        worksheet = selectedWorksheet;
+      on:select-worksheet={({ detail }) => {
+        worksheet = detail;
       }}
       {worksheets}
     />
+    <button class="button" on:click={importSRTFile}
+      >Import from subtitles (.srt file)</button
+    >
+    <button class="button" on:click={createNotes}>Create</button>
+    <button class="button" on:click={updateNotes}>Update</button>
   </section>
   {#if worksheet}
     <section id="video-note-editor" class="section">
-      <VideoNoteEditor />
+      <VideoNoteEditor {editorContent} />
     </section>
   {/if}
 </div>
