@@ -23,10 +23,13 @@
   }
 
   function loadVideoNote() {
-    invoke("plugin:videonote|load_notes")
+    invoke("plugin:videonote|load_notes", {
+      id: 1,
+    })
       .then(() =>
         invoke("plugin:videonote|open_video_notes", {
           fileName: "Friends - 1x01.en.srt",
+          id: 1,
         })
       )
       .then((content) => {

@@ -297,11 +297,12 @@ async fn connect_player<R: Runtime>(app: AppHandle<R>) {
 async fn load_notes<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, PluginState>,
+    id: i32,
 ) -> Result<(), ()> {
-    let resp = reqwest::get("http://127.0.0.1:3000").await.unwrap();
+    let resp = reqwest::get(String::from("http://127.0.0.1:3000/notes/") + &format!("{}", id)).await.unwrap();
     let data = resp.json::<Vec<VideoNote>>().await;
     let video_notes = data.unwrap();
-    let resp = reqwest::get("http://127.0.0.1:3000/chapters")
+    let resp = reqwest::get(String::from("http://127.0.0.1:3000/notes/") + &format!("{}/chapters", id))
         .await
         .unwrap();
     let data = resp.json::<Vec<VideoChapter>>().await;
@@ -383,6 +384,8 @@ fn convert_references_to_video_note_references(references: Map<std::string::Stri
 async fn save_notes<R: Runtime>(
     _app: AppHandle<R>,
     editor_json: EditorContent,
+    id: Option<i32>,
+    title: String,
 ) -> Result<String, ()> {
     let mut chapters = Vec::<VideoChapter>::with_capacity(100);
     let mut notes = Vec::<VideoNote>::with_capacity(100);
@@ -408,7 +411,44 @@ async fn save_notes<R: Runtime>(
             _ => print!("Else"),
         }
     }
-    
+
+    if id == None {
+        let new_chapters = reqwest::Client::new()
+        .put("http://127.0.0.1:3000/notes")
+        .json(&chapters)
+        .send()
+        .await.unwrap()
+        .json::<Vec<VideoChapter>>()
+        .await.unwrap();
+
+    let new_post = reqwest::Client::new()
+        .put("http://127.0.0.1:3000/")
+        .json(&notes)
+        .send()
+        .await.unwrap()
+        .json::<Vec<VideoNote>>()
+        .await.unwrap();
+    } else {
+        let new_chapters = reqwest::Client::new()
+        .put("http://127.0.0.1:3000/notes")
+        .json(&chapters)
+        .send()
+        .await.unwrap()
+        .json::<Vec<VideoChapter>>()
+        .await.unwrap();
+
+    let new_post = reqwest::Client::new()
+        .put("http://127.0.0.1:3000/")
+        .json(&notes)
+        .send()
+        .await.unwrap()
+        .json::<Vec<VideoNote>>()
+        .await.unwrap();
+
+    }
+
+
+
     Ok("Result".to_string())
 }
 

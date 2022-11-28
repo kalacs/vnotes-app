@@ -4,7 +4,9 @@
 
   const webview = new WebviewWindow("main");
   function handleClick(event) {
-    invoke("plugin:videonote|load_notes");
+    invoke("plugin:videonote|load_notes", {
+      id: 1,
+    });
   }
 </script>
 
