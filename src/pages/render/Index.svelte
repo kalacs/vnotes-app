@@ -1,11 +1,11 @@
 <script>
   import { WebviewWindow } from "@tauri-apps/api/window";
-  import PlayButton from "../components/PlayButton.svelte";
-  import SwitchButton from "../components/SwitchButton.svelte";
-  import LoadButton from "../components/LoadButton.svelte";
-  import Subtitle from "../components/Subtitle.svelte";
-  import LeftPanel from "../components/LeftPanel.svelte";
-  import ChapterInfo from "../components/ChapterInfo.svelte";
+  import PlayButton from "../../components/PlayButton.svelte";
+  import SwitchButton from "../../components/SwitchButton.svelte";
+  import LoadButton from "../../components/LoadButton.svelte";
+  import Subtitle from "../../components/Subtitle.svelte";
+  import LeftPanel from "../../components/LeftPanel.svelte";
+  import ChapterInfo from "../../components/ChapterInfo.svelte";
 
   const webview = new WebviewWindow("main");
   let subtitleNote = null;

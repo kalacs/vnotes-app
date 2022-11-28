@@ -154,6 +154,21 @@ struct EditorContent {
     content: Vec<Value>,
 }
 
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct Worksheet {
+    id: i32,
+    title: String,
+    variation: String,
+    version: String,
+    compatibility: Vec<Provider>,
+}
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+struct Provider {
+    id: i32,
+    name: String,
+}
+
 fn read_script_from_file(filename: &str) -> Result<String, Error> {
     let mut content = String::new();
     File::open(filename)?.read_to_string(&mut content)?;
@@ -452,6 +467,16 @@ async fn save_notes<R: Runtime>(
     Ok("Result".to_string())
 }
 
+#[tauri::command]
+async fn get_all_worksheets<R: Runtime>(
+    _app: AppHandle<R>,
+) -> Vec<Worksheet> {
+    let resp = reqwest::get(String::from("http://127.0.0.1:3000/worksheets")).await.unwrap();
+    let data = resp.json::<Vec<Worksheet>>().await;
+println!("{:?}", data);
+    data.unwrap()
+}
+
 fn round(number: f32) -> f32 {
     format!("{:.1}", number).parse::<f32>().unwrap()
 }
@@ -561,6 +586,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             import_srt_file,
             open_video_notes,
             save_notes,
+            get_all_worksheets,
         ])
         .build()
 }

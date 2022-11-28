@@ -39,7 +39,18 @@
       .catch(console.log);
   }
 
-  const saveNotes = () => {
+  const createNotes = () => {
+    console.log(editor.getJSON());
+    invoke("plugin:videonote|save_notes", {
+      editorJson: editor.getJSON(),
+    })
+      .then((result) => {
+        window.alert(result);
+      })
+      .catch(console.log);
+  };
+
+  const updateNotes = () => {
     console.log(editor.getJSON());
     invoke("plugin:videonote|save_notes", {
       editorJson: editor.getJSON(),
@@ -84,7 +95,8 @@
       >Import From Subtitles</button
     >
     <button class="button" on:click={loadVideoNote}>Load Notes</button>
-    <button class="button" on:click={saveNotes}>Save</button>
+    <button class="button" on:click={createNotes}>Create</button>
+    <button class="button" on:click={updateNotes}>Update</button>
     <div class="buttons has-addons menu bubble-menu are-small is-rounded">
       {#if editor}
         <button
