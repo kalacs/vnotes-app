@@ -3,6 +3,7 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import VideoNoteEditor from "./components/VideoNoteEditor.svelte";
   import Worksheets from "./components/Worksheets.svelte";
+  import Details from "./components/Form.svelte";
 
   /*
   {
@@ -10,7 +11,7 @@
     "title": "Friends S01 E01",
     "variation": "B2",
     "version": "0.1",
-    "compability": [
+    "compatibility": [
       {
         "id": 1,
         "name": "HBO Max"
@@ -19,8 +20,14 @@
   }
   */
 
-  export let worksheet;
-  export let worksheets = [];
+  let worksheet = {
+    id: 0,
+    title: "",
+    variation: "0",
+    version: "0.0",
+    compatibility: [],
+  };
+  let worksheets = [];
   let editorContent = "";
 
   $: {
@@ -68,6 +75,10 @@
       .catch(console.log);
   };
 
+  const saveForm = ({ detail }) => {
+    console.log(detail);
+  };
+
   onMount(() => {
     invoke("plugin:videonote|get_all_worksheets")
       .then((result) => {
@@ -88,13 +99,14 @@
       }}
       {worksheets}
     />
+  </section>
+  <section id="worksheet-detail" class="section">
+    <Details on:save-worksheet-details={saveForm} {worksheet} />
+  </section>
+  {#if worksheet}
     <button class="button" on:click={importSRTFile}
       >Import from subtitles (.srt file)</button
     >
-    <button class="button" on:click={createNotes}>Create</button>
-    <button class="button" on:click={updateNotes}>Update</button>
-  </section>
-  {#if worksheet}
     <section id="video-note-editor" class="section">
       <VideoNoteEditor {editorContent} />
     </section>
