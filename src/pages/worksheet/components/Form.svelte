@@ -2,7 +2,6 @@
   import { createEventDispatcher } from "svelte";
   export let worksheet;
   let selectedProviders = [];
-
   const levels = [
     { id: "0", text: "Select option" },
     { id: "A1", text: "A1" },

@@ -10,7 +10,7 @@
     "id":1,
     "title": "Friends S01 E01",
     "variation": "B2",
-    "version": "0.1",
+    "version": 1,
     "compatibility": [
       {
         "id": 1,
@@ -21,10 +21,10 @@
   */
 
   let worksheet = {
-    id: 0,
+    id: "",
     title: "",
     variation: "0",
-    version: "0.0",
+    version: 1,
     compatibility: [],
   };
   let worksheets = [];
@@ -76,7 +76,12 @@
   };
 
   const saveForm = ({ detail }) => {
-    console.log(detail);
+    invoke("plugin:videonote|save_worksheet", { payload: detail })
+      .then(({ error, message }) => {
+        console.error(error);
+        window.alert(message);
+      })
+      .catch(console.log);
   };
 
   onMount(() => {

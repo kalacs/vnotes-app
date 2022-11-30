@@ -156,10 +156,10 @@ struct EditorContent {
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 struct Worksheet {
-    id: i32,
+    id: String,
     title: String,
     variation: String,
-    version: String,
+    version: i32,
     compatibility: Vec<Provider>,
 }
 
@@ -400,7 +400,6 @@ async fn save_notes<R: Runtime>(
     _app: AppHandle<R>,
     editor_json: EditorContent,
     id: Option<i32>,
-    title: String,
 ) -> Result<String, ()> {
     let mut chapters = Vec::<VideoChapter>::with_capacity(100);
     let mut notes = Vec::<VideoNote>::with_capacity(100);
@@ -468,12 +467,40 @@ async fn save_notes<R: Runtime>(
 }
 
 #[tauri::command]
+async fn save_worksheet<R: Runtime>(
+    _app: AppHandle<R>,
+    payload: Worksheet,
+) -> Result<String, ()> {
+    let worksheet: Worksheet;
+
+    if payload.id == "" {
+        worksheet = reqwest::Client::new()
+        .post("http://127.0.0.1:3000/worksheets")
+        .json(&payload)
+        .send()
+        .await.unwrap()
+        .json::<Worksheet>()
+        .await.unwrap();
+    } else {
+        worksheet = reqwest::Client::new()
+        .put(String::from("http://127.0.0.1:3000/worksheets/") + &format!("{}", payload.id))
+        .json(&payload)
+        .send()
+        .await.unwrap()
+        .json::<Worksheet>()
+        .await.unwrap();
+    }
+println!("{:?}", worksheet);
+    Ok("Result".to_string())
+}
+
+#[tauri::command]
 async fn get_all_worksheets<R: Runtime>(
     _app: AppHandle<R>,
 ) -> Vec<Worksheet> {
     let resp = reqwest::get(String::from("http://127.0.0.1:3000/worksheets")).await.unwrap();
     let data = resp.json::<Vec<Worksheet>>().await;
-println!("{:?}", data);
+
     data.unwrap()
 }
 
@@ -587,6 +614,7 @@ pub fn init<R: Runtime>() -> TauriPlugin<R> {
             open_video_notes,
             save_notes,
             get_all_worksheets,
+            save_worksheet,
         ])
         .build()
 }
